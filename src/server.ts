@@ -5,6 +5,7 @@ import connectDb from "./config/database";
 import cors from "cors";
 import cookieParser = require("cookie-parser");
 import userRouter from "./routes/user-routes";
+import postRouter from "./routes/post-routes";
 import adminRouter from "./routes/admin-routes";
 import nocache = require("nocache");
 import path from "path";
@@ -29,6 +30,7 @@ app.use(cookieParser());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/", userRouter);
+app.use("/", postRouter);
 app.use("/admin", adminRouter);
 
 connectDb();

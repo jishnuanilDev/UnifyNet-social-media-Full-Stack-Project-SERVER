@@ -1,6 +1,8 @@
 import { IAuthenticatedRequest } from "types/auth";
 import { Request, Response } from "express";
 import { UserService } from "services/user-service";
+import razorpay from "../config/razorpay";
+import { promises } from "dns";
 
 export class UserController {
   constructor(private userService: UserService) {}
@@ -35,7 +37,7 @@ export class UserController {
     );
     res.status(result.status).json({ message: result.message });
   };
-  public verifyOtp = async (req: Request, res: Response) => {
+  public verifyOtp = async (req: Request, res: Response): Promise<void> => {
     const { otp, email } = req.body;
     console.log("initial otp", otp);
 
@@ -46,7 +48,7 @@ export class UserController {
     res.status(verify.status).json({ message: verify.message });
   };
 
-  public createProfile = async (req: Request, res: Response) => {
+  public createProfile = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, username, phone, bio, gender } = req.body;
 
@@ -69,7 +71,10 @@ export class UserController {
     }
   };
 
-  public userProfile = async (req: IAuthenticatedRequest, res: Response) => {
+  public userProfile = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
     try {
       const user = req.user;
       res.status(200).json({ user });
@@ -81,7 +86,10 @@ export class UserController {
     }
   };
 
-  public updateProfile = async (req: IAuthenticatedRequest, res: Response) => {
+  public updateProfile = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
     try {
       const { username, fullname, bio } = req.body;
       const user = req.user;
@@ -105,7 +113,10 @@ export class UserController {
     }
   };
 
-  public updatePassword = async (req: IAuthenticatedRequest, res: Response) => {
+  public updatePassword = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
     try {
       const { currentPass, newPass, confirmNewPass } = req.body;
       const user = req.user;
@@ -130,18 +141,24 @@ export class UserController {
     }
   };
 
-  public forgotPassword = async (req: Request, res: Response) => {
+  public forgotPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { email } = req.body;
       console.log("forgot-passed email", email);
       const result = await this.userService.forgotPasswordOtp(email);
       if (result) res.status(result.status).json({ message: result.message });
     } catch (err) {
-      console.log("Error occured in");
+      console.log("Error occured in forgot password in user controller", err);
     }
   };
 
-  public forgotPassswordOtpVerify = async (req: Request, res: Response) => {
+  public forgotPassswordOtpVerify = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
     try {
       const { otp } = req.body;
       // const email = req.params.email;
@@ -160,7 +177,7 @@ export class UserController {
     }
   };
 
-  public resetPassword = async (req: Request, res: Response) => {
+  public resetPassword = async (req: Request, res: Response): Promise<void> => {
     try {
       console.log("Password reset controller working");
       const { userEmail, newPassword } = req.body;
@@ -173,106 +190,162 @@ export class UserController {
           .status(result?.status)
           .json({ message: result?.message, userToken: result.userToken });
     } catch (err) {
-      console.error("Error occured in reset password in user controller");
+      console.error("Error occured in reset password in user controller", err);
     }
   };
 
-  public createPost = async (req: IAuthenticatedRequest, res: Response) => {
+  public searchName = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { caption, postImage } = req.body;
+      const { searchName } = req.body;
+      const result = await this.userService.searchName(searchName);
+      if (result) {
+        res
+          .status(result.status)
+          .json({ message: result.message, users: result.users });
+      }
+    } catch (err) {
+      console.error("Error occured in search user in user controller", err);
+    }
+  };
 
+  public friendProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { username } = req.query as { username: string };
+
+      const result = await this.userService.fetchFriendProfile(username);
+      if (result) {
+        res.status(result.status).json({ user: result.user });
+      }
+    } catch (err) {
+      console.error(
+        "Error occured in fetching friend profile in user controller",
+        err
+      );
+    }
+  };
+
+  public followProfile = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { username } = req.body;
+      const { _id: userId } = req.user as { _id: string };
+
+      const result = await this.userService.followProfile(userId, username);
+      if (result) {
+        res.status(result.status).json({ message: result.message });
+      }
+    } catch (err) {
+      console.error("Error occured in follow profile in user controller", err);
+    }
+  };
+  public unFollowProfile = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { username } = req.body;
+      const { _id: userId } = req.user as { _id: string };
+
+      const result = await this.userService.unFollowProfile(userId, username);
+      if (result) {
+        res.status(result.status).json({ message: result.message });
+      }
+    } catch (err) {
+      console.error(
+        "Error occured in unfollow profile in user controller",
+        err
+      );
+    }
+  };
+
+  public blueTickProceed = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { _id: userId } = req.user as { _id: string };
+      console.log("user token checking here for blue tick purchase", userId);
+      const result = await this.userService.blueTickProceed(userId);
+      if (result) {
+        res.status(result.status).json({ message: result.message });
+      }
+    } catch (err) {
+      console.error(
+        "Error occured in blue tick confirm in user controller",
+        err
+      );
+    }
+  };
+
+  public createNewChat = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { participantId } = req.body;
       const user = req.user;
-      const { email } = user as { email: string };
-      const result = await this.userService.createPost(
-        email,
-        caption,
-        postImage
+      const { _id: userId } = user as { _id: string };
+      console.log("participantId", participantId);
+      console.log("userId", userId);
+
+      const result = await this.userService.createNewChat(
+        userId,
+        participantId
       );
       if (result) {
-        res.status(result?.status).json({ message: result?.message });
-      }
-    } catch (err) {
-      console.error("Error occured in createPost user controller");
-    }
-  };
-
-  public fetchPosts = async (req: Request, res: Response) => {
-    try {
-      const result = await this.userService.fetchPosts();
-      if (result) {
-        res.status(result.status).json({ posts: result.posts });
-      }
-    } catch (err) {
-      console.error("Error occured in fetchPost user controller");
-    }
-  };
-
-  public likePost = async (req: IAuthenticatedRequest, res: Response) => {
-    try {
-      const { postId } = req.body;
-      const user = req.user;
-      const { email } = user as { email: string };
-
-      console.log("req.body post like", req.body);
-      const result = await this.userService.likePost(postId, email);
-    } catch (err) {
-      console.error("Error occured in likepost user controller");
-    }
-  };
-
-  public unLikePost = async (req: IAuthenticatedRequest, res: Response) => {
-    try {
-      const { postId } = req.body;
-      const user = req.user;
-      const { email } = user as { email: string };
-
-      console.log("req.body post like", req.body);
-      const result = await this.userService.unLikePost(postId, email);
-    } catch (err) {
-      console.error("Error occured in unLikepost user controller");
-    }
-  };
-
-  public fetchUserPosts = async (req: IAuthenticatedRequest, res: Response) => {
-    try {
-      const user = req.user;
-      const { email } = user as { email: string };
-      const result = await this.userService.fetchUserPosts(email);
-      if (result) {
-        res.status(result.status).json({ posts: result.posts });
-      }
-    } catch (err) {
-      console.error("Error occured in fetchUserPosts user controller");
-    }
-  };
-
-  public postComment = async (req: IAuthenticatedRequest, res: Response) => {
-    try {
-      const user = req.user;
-      const { comment, postId } = req.body;
-
-      const { email } = user as { email: string };
-      const result = await this.userService.postComment(email, comment, postId);
-      if (result) {
         res.status(result.status).json({ message: result.message });
       }
     } catch (err) {
-      console.error("Error occured in post comment user controller");
+      console.error("Error occured in create new chat in user controller", err);
     }
   };
 
-  public reportPost = async (req: IAuthenticatedRequest, res: Response) => {
+  public getConversations = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const user = req.user;
-      const { report, postId } = req.body;
-
-      const { email } = user as { email: string };
-      const result = await this.userService.reportPost(email, report, postId);
+      const { _id: userId } = user as { _id: string };
+      const result = await this.userService.fetchUserConversations(userId);
       if (result) {
-        res.status(result.status).json({ message: result.message });
+        res.status(result.status).json({ chats: result.chats ,currentUserId:userId});
       }
     } catch (err) {
-      console.error("Error occured in post comment user controller");
+      console.error("Error occured get converstions in user controller", err);
+    }
+  };
+
+  public sendMessage = async (req: IAuthenticatedRequest, res: Response) => {
+    try {
+      const user = req.user;
+      const { chatId, message } = req.body;
+      const { _id: userId } = user as { _id: string };
+      const result = await this.userService.sendMessage(
+        userId,
+        chatId,
+        message
+      );
+      if (result) {
+        res.status(result.status).json({ savedMessage: result.savedMessage });
+      }
+    } catch (err) {
+      console.log("Error occured in sending message in user controller", err);
+    }
+  };
+
+  public getMessages = async (req: IAuthenticatedRequest, res: Response) => {
+    try {
+      const chatId = req.body;
+      const {_id:userId} = req.user as {_id:string}
+      const result = await this.userService.getMessages(chatId);
+      if (result) {
+        res.status(result.status).json({ chatMessages: result.chatMessages,currentUserId:userId });
+      }
+    } catch (err) {
+      console.error("Error occured get messages in user controller", err);
     }
   };
 }

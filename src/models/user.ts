@@ -9,6 +9,7 @@ export interface IUser extends Document {
   password: string;
   phone: number;
   gender: string;
+  isPremium:boolean;
   savedPost: mongoose.Schema.Types.ObjectId[];
   isBlocked: boolean;
   status: string
@@ -57,6 +58,10 @@ const userSchema = new mongoose.Schema<IUser>(
       },
     ],
     isBlocked: { type: Boolean, default: false },
+    isPremium:{
+      type:Boolean,
+      default:false
+    },
     status: {
       type: String,
       enum: ["active", "blocked"],

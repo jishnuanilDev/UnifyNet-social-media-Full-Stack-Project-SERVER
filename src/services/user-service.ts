@@ -26,7 +26,7 @@ export class UserService {
       return { status: 404, message: "Password not match" };
     }
     const token = await generateToken(user._id);
-    
+
     if (!token) {
       console.log("no token get in user service");
     }
@@ -92,9 +92,10 @@ export class UserService {
     gender: string
   ): Promise<{ status: number; message: string; userToken?: string }> {
     try {
-
-      const usernameExist = await this.UserRepository.findUserByUsername(username);
-      if(usernameExist){
+      const usernameExist = await this.UserRepository.findUserByUsername(
+        username
+      );
+      if (usernameExist) {
         return { status: 409, message: "Username already taken" };
       }
       const updatedUser = await this.UserRepository.createUserProfile(
@@ -135,12 +136,13 @@ export class UserService {
   ) {
     try {
       const user = await this.UserRepository.findUserByEmail(email);
-      const usernameExistUser = await this.UserRepository.findUserByUsername(username);
-      if(usernameExistUser && user){
-        if(usernameExistUser.username!=user.username && usernameExistUser){
+      const usernameExistUser = await this.UserRepository.findUserByUsername(
+        username
+      );
+      if (usernameExistUser && user) {
+        if (usernameExistUser.username != user.username && usernameExistUser) {
           return { status: 409, message: "Username already taken" };
         }
-        
       }
       const updatedUser = await this.UserRepository.updateUserProfile(
         username,
@@ -149,15 +151,14 @@ export class UserService {
         email,
         profilePic
       );
-      if(updatedUser){
+      if (updatedUser) {
         return {
           status: 201,
-          message: "Upadated your profile"
+          message: "Upadated your profile",
         };
-      }else{
+      } else {
         return null;
       }
-    
     } catch (err) {
       console.error("Error fetching user profile in user service", err);
     }
@@ -256,104 +257,110 @@ export class UserService {
     }
   }
 
-  async createPost(email: string, caption: string, postImage: string) {
+  async searchName(searchName: string) {
     try {
-
-   
-      const user = this.UserRepository.findUserByEmail(email);
-      if (!user) {
-        return { status: 401, message: "User not exist" };
+      const users = await this.UserRepository.searchName(searchName);
+      if (!users) {
+        return { status: 200, message: "No users found", users: null };
       }
-
-      const result = await cloudinary.uploader.upload(postImage,{
-        folder:"Posts",
-      })
-
-      if(result){
-
-        const response = await this.UserRepository.uploadPost(
-          email,
-          caption,
-          result.public_id,
-          result.secure_url
-        );
-        if (response) {
-          return { status: 200, message: "Post Published" };
-        } else {
-          return { status: 401, message: "Post Uploading failed" };
-        }
-      }
-
+      return { status: 200, users: users, message: "" };
     } catch (err) {
-      console.error("Error occured in user upload post in user service", err);
+      console.error("Error occured in search usernames in user service", err);
+      return { status: 401, message: "searching users failed" };
     }
   }
 
-
-  async fetchPosts(){
-    try{
-const posts = await this.UserRepository.fetchPosts();
-if(posts){
-  return { status: 200,posts:posts };
-}else{
-  return { status: 401, message: "Post fetching failed" };
-}
-    }catch(err){
-      console.error("Error occured in fetchPost in user service", err);
+  async fetchFriendProfile(username: string) {
+    try {
+      const user = await this.UserRepository.fetchFriendProfile(username);
+      return { status: 200, user: user };
+    } catch (err) {
+      console.error(
+        "Error occured in fetching friend profile in user service",
+        err
+      );
     }
   }
 
-
-  async likePost(postId:string,email:string){
-    try{
-  
-     const result = await this.UserRepository.likePost(postId,email);
-    }catch(err){
-      console.error("Error occured in like post in user service", err);
+  async followProfile(userId: string, username: string) {
+    try {
+      const result = await this.UserRepository.followProfile(userId, username);
+      return { status: 200, message: `You Following ${username}` };
+    } catch (err) {
+      console.error("Error occured in follow request in user service", err);
     }
   }
 
-  async unLikePost(postId:string,email:string){
-    try{
-    
-     const result = await this.UserRepository.unLikePost(postId,email);
-    }catch(err){
-      console.error("Error occured in like post in user service", err);
+  async unFollowProfile(userId: string, username: string) {
+    try {
+      const result = await this.UserRepository.unFollowProfile(
+        userId,
+        username
+      );
+
+      return { status: 200, message: `You Unfollowed ${username}` };
+    } catch (err) {
+      console.error("Error occured in follow request in user service", err);
     }
   }
 
-  async fetchUserPosts(email:string){
-    try{
-const posts = await this.UserRepository.fetchUserPosts(email)
-return { status: 200,posts:posts };
-    }catch(err){
-      console.error("Error occured in fetch user posts in user service", err);
-    }
-  }
-
-  async postComment(email:string,comment:string,postId:string){
-try{
-const result = await this.UserRepository.postComment(email,comment,postId);
-if(result){
-  return { status: 200,message:'Comment added' }
-}else{
-  return { status: 401,message:'Comment adding failed' }
-}
-}catch(err){
-
-}
-  }
-
-  async reportPost(email:string,report:string,postId:string){
-    try{
-    const result = await this.UserRepository.reportPost(email,report,postId);
-    if(result){
-      return { status: 200,message:'Report Submitted' }
-    }else{
-      return { status: 401,message:'Report submitting failed' }
-    }
-    }catch(err){
-    
-    }
+  async blueTickProceed(userId: string) {
+    try {
+      const result = await this.UserRepository.blueTickProceed(userId);
+      if (result) {
+        return { status: 200, message: "Premium Activated Successfully" };
       }
+    } catch (err) {
+      console.error("Error occured in blue tick confirm in user service", err);
+    }
+  }
+
+  async createNewChat(userId: string,participantId:string) {
+    try {
+      const result = await this.UserRepository.createNewChat(userId,participantId);
+      if (result) {
+        return { status: 200, message: "Chat Created Successfully" };
+      }else{
+        return { status: 401, message: "Chat already exist" };
+      }
+    } catch (err) {
+      console.error("Error occured in create new chat in user service", err);
+    }
+  }
+
+  async fetchUserConversations(userId:string){
+    try{
+const chats = await this.UserRepository.fetchUserConversations(userId);
+if(chats){
+
+  return { status: 200, chats: chats };
+}
+    }catch(err){
+      console.error("Error occured in get conversations in user service", err);
+    }
+  }
+
+  async sendMessage(userId:string,chatId:string,message:string){
+    try{
+const savedMessage = await this.UserRepository.sendMessage(userId,chatId,message);
+if(savedMessage){
+  return { status: 200, savedMessage: savedMessage};
+}else{
+  return { status: 401, message: "Message not send" };
+}
+    }catch(err){
+      console.log("error occured in sending message in user service",err)
+    }
+  }
+
+  async getMessages(chatId:string){
+    try{
+const chatMessages = await this.UserRepository.getMessages(chatId);
+if(chatMessages){
+  return { status: 200, chatMessages: chatMessages };
+}
+    }catch(err){
+      console.log("error occured in get messages in user service",err)
+    }
+  }
 }

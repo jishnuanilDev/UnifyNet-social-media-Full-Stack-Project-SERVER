@@ -12,22 +12,22 @@ type DecodedToken = {
 
 const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    console.log("initial state of token request");
+    // console.log("initial state of token request");
     const token = req.headers.authorization;
     if (!token) {
       console.log(" 2 token missing");
       return res.status(401).json({ info: "Authorization token is missing" });
     }
-    console.log("token gotchaaa");
+    // console.log("token gotchaaa");
 
-    const decoded = (await verifyToken(token)) as DecodedToken;
+    const decoded = ( verifyToken(token)) as DecodedToken;
     const userId: string = decoded.userId;
     const user = await User.findById(userId);
     if (!user) {
-      console.log("3 not find user ");
+      // console.log("3 not find user ");
       return res.status(401).json({ error: "Invalid token" });
     }
-    console.log("4 token get , user passed to request");
+    // console.log("4 token get , user passed to request");
     req.user = user;
     next();
   } catch (err) {

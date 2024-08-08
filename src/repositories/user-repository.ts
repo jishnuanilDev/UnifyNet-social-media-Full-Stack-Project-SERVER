@@ -2,6 +2,9 @@ import { User, PendingUser } from "../models/user";
 import Post from "../models/post";
 import { IUser } from "models/user";
 import mongoose from "mongoose";
+import Comment from "../models/comments";
+import { Chat } from "../models/chatSchema";
+import ChatMessage from "../models/message";
 
 export class UserRepository {
   async findUserByEmail(email: string): Promise<IUser | null> {
@@ -204,157 +207,186 @@ export class UserRepository {
     }
   }
 
-  async uploadPost(
-    email: string,
-    caption: string,
-    imgPublicId: string,
-    imgUrl: string
-  ) {
+  async searchName(searchName: string) {
     try {
-      const user = await this.findUserByEmail(email);
-      if (!user) {
-        throw new Error("User not found ");
-      }
-
-      const post = new Post({
-        image: {
-          public_id: imgPublicId,
-          url: imgUrl,
-        },
-        caption: caption,
-        user: user._id,
+      const users = await User.find({
+        username: { $regex: `^${searchName}`, $options: "i" },
       });
+      return users;
+    } catch (err) {}
+  }
 
-      const newPost = await post.save();
-      user.posts.push(newPost._id as mongoose.Schema.Types.ObjectId);
-      return await user.save();
+  async fetchFriendProfile(username: string) {
+    try {
+      const user = User.findOne({ username }).populate("posts");
+      if (!user) {
+        throw new Error("Friend not found ");
+      }
+      return user;
     } catch (err) {
       console.error(
-        "Error occured during in uploading user post in user repository",
+        "Error occured during fetching friend profile repository",
         err
       );
     }
   }
 
-  async fetchPosts() {
+  async followProfile(userId: string, username: string) {
     try {
-      return await Post.find({}).populate("user", "username").populate({
-        path: 'comments.user',
-        select: 'username', 
-      }).sort({ createdAt: -1 }).exec();
-    } catch (err) {
-      console.error("Error occured during fetchPosts in repository", err);
-    }
-  }
-
-  async findPostById(postId: string) {
-    try {
-      return await Post.findById(postId);
-    } catch (err) {
-      console.error("Error occured during find post by id in repository", err);
-    }
-  }
-
-  async likePost(postId: string, email: string) {
-    try {
-      const post = await this.findPostById(postId);
-      const user = await this.findUserByEmail(email);
-      if (post && user) {
-        post.likes.push(user._id as mongoose.Types.ObjectId);
-        await post.save();
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found ");
       }
-    } catch (err) {
-      console.error("Error occured during liking postin repository", err);
-    }
-  }
-
-  async unLikePost(postId: string, email: string) {
-    try {
-      const post = await this.findPostById(postId);
-      const user = await this.findUserByEmail(email);
-      if (post && user) {
-        post.likes = post.likes.filter(
-          (like: mongoose.Types.ObjectId) =>
-            !like.equals(user._id as mongoose.Types.ObjectId)
-        );
-        await post.save();
+      const friendUser = await User.findOne({ username });
+      if (!friendUser) {
+        throw new Error("Friend not found ");
       }
+      friendUser.followers.unshift(user._id as mongoose.Schema.Types.ObjectId);
+      await friendUser.save();
+
+      user.following.unshift(friendUser._id as mongoose.Schema.Types.ObjectId);
+      await user.save();
+
+      return;
     } catch (err) {
-      console.error("Error occured during liking post in repository", err);
+      console.error(
+        "Error occured during follow request in user repository",
+        err
+      );
     }
   }
 
-
-  async fetchUserPosts(email:string){
-try{
-const user = await this.findUserByEmail(email);
-if(!user){
-  throw new Error("User not found ");
-}
-
-const posts = await Post.find({user:user});
-if(posts){
-  return posts;
-}else{
-  return null;
-}
-}catch(err){
-  console.error("Error occured during fetching user posts repository", err);
-}
-  }
-
-  async postComment(email:string,comment:string,postId:string){
-    try{
-const user = await this.findUserByEmail(email);
-if(!user){
-  throw new Error("User not found ");
-}
-
-const post = await this.findPostById(postId);
-
-if(!post){
-  throw new Error("Post not found ");
-}
-
-const newComment = {
-  user:user._id as mongoose.Types.ObjectId,
-  comment:comment,
-  createdAt: new Date(),
-}
-
-post.comments.unshift(newComment);
-await post.save();
-return post;
-    }catch(err){
-      console.error("Error occured during post comment repository", err);
+  async unFollowProfile(userId: string, username: string) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found ");
+      }
+      const friendUser = await User.findOne({ username });
+      if (!friendUser) {
+        throw new Error("Friend not found ");
+      }
+      const idUser = user._id as mongoose.Schema.Types.ObjectId;
+      const idFriendUser = friendUser._id as mongoose.Schema.Types.ObjectId;
+      friendUser.followers = friendUser.followers.filter(
+        (followerId) => followerId.toString() !== idUser.toString()
+      );
+      await friendUser.save();
+      user.following = user.following.filter(
+        (followingId) => followingId.toString() !== idFriendUser.toString()
+      );
+      await user.save();
+      return;
+    } catch (err) {
+      console.error(
+        "Error occured during follow request in user repository",
+        err
+      );
     }
   }
 
+  async blueTickProceed(userId: string) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found ");
+      }
+      user.isPremium = true;
+      return await user.save();
+    } catch (err) {
+      console.error("Error occured during blue tick confirm repository", err);
+    }
+  }
 
-  async reportPost(email:string,report:string,postId:string){
+  async createNewChat(userId: string,participantId:string) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found ");
+      }
+      const chatExist = await Chat.findOne({
+        participants:{$all:[userId,participantId]}
+      })
+      if(chatExist){
+        return null;
+      }
+const newChat = new Chat({
+  participants: [userId, participantId],
+  messages: [],
+  lastMessage: null,
+})
+const savedChat = await newChat.save();
+    
+return savedChat;
+    } catch (err) {
+      console.error("Error occured during create new chat in  repository", err);
+    }
+  }
+
+  async fetchUserConversations(userId:string){
     try{
-const user = await this.findUserByEmail(email);
-if(!user){
-  throw new Error("User not found ");
-}
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found ");
+      }
+      const chats = await Chat.find({
+        participants:userId
+      }).populate('participants','username');
 
-const post = await this.findPostById(postId);
-
-if(!post){
-  throw new Error("Post not found ");
-}
-
-const newReport = {
-  user:user._id as mongoose.Types.ObjectId,
-  report:report,
-  createdAt: new Date(),
-}
-
-post.reports.unshift(newReport);
-await post.save();
-return post;
+      return chats;
     }catch(err){
-      console.error("Error occured during posting post report repository", err);
+      console.error("Error occured during fetch conversations repository", err);
+    }
+  }
+
+  async sendMessage(userId:string,chatId:string,message:string){
+    try{
+      console.log('chatid display user repository send message',chatId);
+const chat = await Chat.findById(chatId);
+if (!chat) {
+  throw new Error('Chat not found');
+}
+const sender = await User.findById(userId);
+if (!sender) {
+  throw new Error('Sender not found');
+}
+
+const newMessage = new ChatMessage({
+  chat:chat._id,
+  sender:sender._id,
+  message:message,
+  status:'delivered'
+})
+
+await newMessage.save();
+await newMessage.populate('sender', 'username');
+chat.messages.push(newMessage._id);
+await chat.save();
+return newMessage;
+    }catch(err){
+      console.log("Error occured in storing message in user repository",err)
+    }
+  }
+
+  async getMessages(chatId:any){
+    try{
+const chat = await Chat.findById(chatId.chatId).populate({
+  path:'messages',
+  select:'message createdAt status',
+  populate:{
+    path:'sender',
+    select:'username'
+  }
+});
+if (!chat) {
+  throw new Error('Chat not found');
+}
+
+return chat.messages; 
+
+
+    }catch(err){
+      console.log("Error occured in get all messages in user repository",err)
     }
   }
 }

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Document } from "mongoose";
 
+
 export interface IPost extends Document {
   user: mongoose.Types.ObjectId;
   caption: string;
@@ -10,11 +11,7 @@ export interface IPost extends Document {
     url: string;
   };
   likes: mongoose.Types.ObjectId[];
-  comments: {
-    user: mongoose.Types.ObjectId;
-    comment: string;
-    createdAt: Date;
-  }[];
+  comments:  mongoose.Types.ObjectId[];
   reports: {
     user: mongoose.Types.ObjectId;
     report: string;
@@ -44,19 +41,7 @@ const postSchema = new mongoose.Schema<IPost>(
         ref: "User",
       },
     ],
-    comments: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        comment: String,
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+    comments: [{type:mongoose.Schema.Types.ObjectId,ref:'Comment'}],
     isUnlisted: { type: Boolean, default: false },
     reports: [
       {

@@ -30,12 +30,14 @@ userRouter.post(
   userController.forgotPassswordOtpVerify
 );
 userRouter.post("/reset-password", userController.resetPassword);
-userRouter.post("/create-post", protect, userController.createPost);
-userRouter.get("/get-posts", userController.fetchPosts);
-userRouter.post("/like-post", protect, userController.likePost);
-userRouter.post("/unLike-post", protect, userController.unLikePost);
-userRouter.get("/user-posts", protect, userController.fetchUserPosts);
-userRouter.post("/user-comment", protect, userController.postComment);
-userRouter.post("/report-post", protect, userController.reportPost);
 
+userRouter.post("/search-name", userController.searchName);
+userRouter.get("/friend-profile", userController.friendProfile);
+userRouter.post("/follow", protect, userController.followProfile);
+userRouter.post("/unFollow", protect, userController.unFollowProfile);
+userRouter.post("/blueTickConfirmed", protect, userController.blueTickProceed);
+userRouter.post("/create-new-chat", protect, userController.createNewChat);
+userRouter.get("/conversations", protect, userController.getConversations);
+userRouter.post("/sendMessage", protect, userController.sendMessage);
+userRouter.post("/getMessages",protect,userController.getMessages);
 export default userRouter;
