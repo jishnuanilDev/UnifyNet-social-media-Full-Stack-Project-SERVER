@@ -9,42 +9,52 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.captionGenerate = captionGenerate;
 const generative_ai_1 = require("@google/generative-ai");
-// const genAI = new GoogleGenerativeAI('AIzaSyDyHHqXLXVP0gcJLJox5foa2ClGVvbVOqk');
-// async function run() {
-//   const model: GenerativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-// const prompt = "Write a story about a marvel avengers.";
-// const result = await model.generateContent(prompt);
-// const result = await model.generateContent([
-//   "What is in this photo?",
-//   {
-//     inlineData: {
-//       data: Buffer.from(fs.readFileSync('path/to/image.png')).toString("base64"),
-//       mimeType: 'image/png'
-//     }
-//   }
-// ]);
-// console.log(result.response.text());
-// }
-// run();
-const chatBot = () => __awaiter(void 0, void 0, void 0, function* () {
-    const genAI = new generative_ai_1.GoogleGenerativeAI('AIzaSyDyHHqXLXVP0gcJLJox5foa2ClGVvbVOqk');
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const chat = model.startChat({
-        history: [
-            {
-                role: "user",
-                parts: [{ text: "Hello" }],
-            },
-            {
-                role: "model",
-                parts: [{ text: "Great to meet you. What would you like to know?" }],
-            },
-        ],
+const genAI = new generative_ai_1.GoogleGenerativeAI('AIzaSyAhpccgF3zU5_ZiXLAt-qnrdta0VCSLmg0');
+function captionGenerate(postImage) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const prompt = "Write a story about a marvel avengers.";
+        // const result = await model.generateContent(prompt);
+        const base64Data = postImage.split(',')[1];
+        try {
+            const result = yield model.generateContent([
+                "Generate a one line caption for social media",
+                {
+                    inlineData: {
+                        data: base64Data, // Only base64 string
+                        mimeType: 'image/png' // Ensure this matches your image type
+                    }
+                }
+            ]);
+            console.log('caption mwonuse', result.response.text()); // Output the generated caption
+            console.log('caption mwonuse didididididididi');
+            return result.response.text();
+        }
+        catch (error) {
+            console.error("API Error in gemini:", error); // Log detailed error info
+        }
     });
-    let result = yield chat.sendMessage("I have 2 dogs in my house.");
-    console.log(result.response.text());
-    result = yield chat.sendMessage("How many paws are in my house?");
-    console.log(result.response.text());
-});
-chatBot();
+}
+// const chatBot = async()=>{
+//     const genAI = new GoogleGenerativeAI('AIzaSyDyHHqXLXVP0gcJLJox5foa2ClGVvbVOqk');
+//     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+//     const chat = model.startChat({
+//       history: [
+//         {
+//           role: "user",
+//           parts: [{ text: "Hello" }],
+//         },
+//         {
+//           role: "model",
+//           parts: [{ text: "Great to meet you. What would you like to know?" }],
+//         },
+//       ],
+//     });
+//     let result = await chat.sendMessage("I have 2 dogs in my house.");
+//     console.log(result.response.text());
+//     result = await chat.sendMessage("How many paws are in my house?");
+//     console.log(result.response.text());
+//   }
+//   chatBot();

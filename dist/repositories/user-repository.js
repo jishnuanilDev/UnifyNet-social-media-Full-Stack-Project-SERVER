@@ -14,12 +14,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRepository = void 0;
 const user_1 = require("../models/user");
+const comments_1 = require("../models/comments");
 const chatSchema_1 = require("../models/chatSchema");
 const message_1 = __importDefault(require("../models/message"));
 const communityMessage_1 = __importDefault(require("../models/communityMessage"));
 const communitySchema_1 = __importDefault(require("../models/communitySchema"));
 const premiumUser_1 = __importDefault(require("../models/premiumUser"));
 const notifications_1 = __importDefault(require("../models/notifications"));
+const products_1 = __importDefault(require("../models/products"));
+const wishlist_1 = __importDefault(require("../models/wishlist"));
 class UserRepository {
     findUserByEmail(email) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -316,7 +319,7 @@ class UserRepository {
                 }
                 const chats = yield chatSchema_1.Chat.find({
                     participants: userId,
-                }).populate("participants", "username");
+                }).populate("participants", "username profilePic");
                 return chats;
             }
             catch (err) {
@@ -562,8 +565,8 @@ class UserRepository {
     unsendMessage(userId, messageId, chatId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('Chat id for delete message', chatId);
-                console.log('messageIdfor delete message', messageId);
+                console.log("Chat id for delete message", chatId);
+                console.log("messageIdfor delete message", messageId);
                 const chat = yield chatSchema_1.Chat.findByIdAndUpdate(chatId, { $pull: { messages: messageId } }, { new: true });
                 if (!chat) {
                     throw new Error("Chat not found.");
@@ -581,8 +584,8 @@ class UserRepository {
     unsendCommunityMessage(userId, messageId, communityId) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('Chat id for delete community message', communityId);
-                console.log('messageIdfor delete message', messageId);
+                console.log("Chat id for delete community message", communityId);
+                console.log("messageIdfor delete message", messageId);
                 const community = yield communitySchema_1.default.findByIdAndUpdate(communityId, { $pull: { messages: messageId } }, { new: true });
                 if (!community) {
                     throw new Error("community not found.");
@@ -614,6 +617,176 @@ class UserRepository {
             }
             catch (err) {
                 console.error("Error occured during fetch notificatioins repository", err);
+            }
+        });
+    }
+    ReadNotification(userId, notificationId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log("notificationId for mark as read  notification", notificationId);
+                const notification = yield notifications_1.default.findByIdAndDelete(notificationId);
+                if (!notification) {
+                    throw new Error("notification not found for mark as read");
+                }
+                return true;
+            }
+            catch (err) {
+                console.error("Error occured in  mark as read user in repository", err);
+            }
+        });
+    }
+    clearAllNotifications(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log("clearing all  notifications", userId);
+                const user = yield user_1.User.findById(userId);
+                const result = yield notifications_1.default.deleteMany({
+                    receiver: userId,
+                });
+                if (result.deletedCount === 0) {
+                    throw new Error("No notifications found for clearing");
+                }
+                return true;
+            }
+            catch (err) {
+                console.error("Error occured in  mark as read user in repository", err);
+            }
+        });
+    }
+    fetchProducts() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield products_1.default.find({ isListed: true }).populate({
+                    path: "sellerId",
+                    select: "username phone", // Select only the username and phone from the seller (User)
+                });
+            }
+            catch (err) {
+                console.error("Error occured in product fetching in user repository", err);
+            }
+        });
+    }
+    fetchUserLists(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userLists = yield products_1.default.find({ sellerId: userId });
+                if (!userLists) {
+                    return null;
+                }
+                return userLists;
+            }
+            catch (err) {
+                console.error("Error occured in product fetching in user repository", err);
+            }
+        });
+    }
+    markAsSold(listId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // console.log("listID anoodoo", listId);
+                const soldProduct = yield products_1.default.findOneAndUpdate({ _id: listId }, { isSold: true }, { new: true });
+                if (!soldProduct) {
+                    console.log("Error updating product mark as sold");
+                    return null;
+                }
+                return soldProduct;
+            }
+            catch (err) {
+                console.error("Error occured in product fetching in user repository", err);
+            }
+        });
+    }
+    fetchReplies(commentId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // Find all replies that are linked to the given commentId
+                const replies = yield comments_1.ReplyComment.find({ comment: commentId })
+                    .populate({
+                    path: "user",
+                    select: "username", // Populate the 'user' field and select specific fields, e.g., username
+                })
+                    .sort({ createdAt: -1 });
+                if (replies.length === 0) {
+                    console.log("No replies found for this comment");
+                    throw new Error("No replies found in commentId");
+                }
+                console.log("replies kitttind in fetching replies", replies);
+                return replies;
+            }
+            catch (err) {
+                console.error("Error occurred in fetching replies:", err);
+                return null;
+            }
+        });
+    }
+    addToWishlist(productId, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let wishlist = yield wishlist_1.default.findOne({ user: userId });
+                if (!wishlist) {
+                    wishlist = new wishlist_1.default({
+                        user: userId,
+                        products: [productId],
+                    });
+                }
+                else {
+                    if (wishlist.products.includes(productId)) {
+                        return { message: "Already in the wishlist" };
+                    }
+                    else {
+                        wishlist.products.push(productId);
+                    }
+                }
+                yield wishlist.save();
+                return { message: "Product added to wishlist" };
+            }
+            catch (err) {
+                console.error("Error occurred in fetching replies:", err);
+                return null;
+            }
+        });
+    }
+    fetchUserWishlist(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userWishlist = yield wishlist_1.default.findOne({ user: userId })
+                    .populate({
+                    path: "products",
+                    populate: {
+                        path: "sellerId",
+                        select: "username phone",
+                    },
+                })
+                    .exec();
+                if (!userWishlist) {
+                    return null;
+                }
+                return userWishlist;
+            }
+            catch (err) {
+                console.error("Error occurred in fetching user wishlist:", err);
+                throw new Error("Error occurred while fetching user wishlist");
+            }
+        });
+    }
+    removeFromWishlist(productId, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = yield user_1.User.findOne(userId);
+                const userWishlist = yield wishlist_1.default.findOne({ user: user === null || user === void 0 ? void 0 : user._id });
+                if (!userWishlist) {
+                    throw new Error("Wishlist not found for the user.");
+                }
+                if (!userWishlist.products.includes(productId)) {
+                    throw new Error("Product not found in the wishlist.");
+                }
+                userWishlist.products = userWishlist.products.filter((id) => id.toString() !== productId);
+                yield userWishlist.save();
+                return { message: "Product removed from wishlist successfully." };
+            }
+            catch (err) {
+                console.error("Error occurred while removing product from wishlist:", err);
+                throw new Error("Error occurred while removing product from wishlist");
             }
         });
     }

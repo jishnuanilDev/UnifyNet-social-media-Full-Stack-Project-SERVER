@@ -15,6 +15,7 @@ const postService = new post_service_1.PostService(postRespository, userResposit
 const postController = new post_controller_1.PostController(postService);
 const postRouter = express_1.default.Router();
 postRouter.post("/create-post", auth_1.protect, postController.createPost);
+postRouter.post("/generate-caption", auth_1.protect, postController.generateCaption);
 postRouter.get("/get-posts", postController.fetchPosts);
 postRouter.post("/like-post", auth_1.protect, postController.likePost);
 postRouter.post("/unLike-post", auth_1.protect, postController.unLikePost);
@@ -25,4 +26,5 @@ postRouter.post("/report-post", auth_1.protect, postController.reportPost);
 postRouter.post("/delete-post", auth_1.protect, postController.deletePost);
 postRouter.post("/save-post", auth_1.protect, postController.savePost);
 postRouter.post("/unsave-post", auth_1.protect, postController.unsavePost);
+postRouter.post("/reply-comment", auth_1.protect, postController.replyComment);
 exports.default = postRouter;

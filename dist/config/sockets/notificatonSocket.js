@@ -17,7 +17,12 @@ const socket_io_1 = require("socket.io");
 const post_1 = __importDefault(require("../../models/post"));
 const user_1 = require("../../models/user");
 const notifications_1 = __importDefault(require("../../models/notifications"));
-const notificationSocket = (server) => {
+const express_1 = __importDefault(require("express"));
+const app = (0, express_1.default)();
+const server = app.listen(9000, () => {
+    console.log(`Server running on port 9000 for notification socket`);
+});
+const notificationSocket = () => {
     const io = new socket_io_1.Server(server, {
         cors: {
             origin: "http://localhost:3000",

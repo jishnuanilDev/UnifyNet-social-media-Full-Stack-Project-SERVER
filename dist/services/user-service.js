@@ -17,6 +17,7 @@ const otp_generator_1 = require("../config/otp-generator");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const otp_mailer_1 = require("../config/otp-mailer");
 const userAuth_1 = require("../config/userAuth");
+const cloudinary_1 = __importDefault(require("../config/cloudinary"));
 class UserService {
     constructor(UserRepository, generatedOtp) {
         this.UserRepository = UserRepository;
@@ -111,7 +112,7 @@ class UserService {
             }
         });
     }
-    updateProfile(username, fullname, bio, email, profilePic) {
+    updateProfile(username, fullname, bio, email, image) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const user = yield this.UserRepository.findUserByEmail(email);
@@ -121,7 +122,10 @@ class UserService {
                         return { status: 409, message: "Username already taken" };
                     }
                 }
-                const updatedUser = yield this.UserRepository.updateUserProfile(username, fullname, bio, email, profilePic);
+                const result = yield cloudinary_1.default.uploader.upload(image, {
+                    folder: "ProfilePic",
+                });
+                const updatedUser = yield this.UserRepository.updateUserProfile(username, fullname, bio, email, result.secure_url);
                 if (updatedUser) {
                     return {
                         status: 201,
@@ -510,6 +514,132 @@ class UserService {
             }
             catch (err) {
                 console.error("Error occured in get conversations in user service", err);
+            }
+        });
+    }
+    ReadNotification(userId, notificationId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.UserRepository.ReadNotification(userId, notificationId);
+                if (result) {
+                    return { status: 200, message: "Marked as read " };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    clearAllNotifications(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.UserRepository.clearAllNotifications(userId);
+                if (result) {
+                    return { status: 200, message: "Notifications cleared " };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    fetchProducts() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const products = yield this.UserRepository.fetchProducts();
+                if (products) {
+                    return { status: 200, products: products };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    fetchUserLists(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userLists = yield this.UserRepository.fetchUserLists(userId);
+                if (userLists) {
+                    return { status: 200, userLists: userLists };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    markAsSold(listId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.UserRepository.markAsSold(listId);
+                if (result) {
+                    return { status: 200, message: 'Marked as sold', success: true };
+                }
+                else {
+                    return { status: 401, message: 'Failed to mark as sold ', success: false };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    fetchReplies(commentId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const replies = yield this.UserRepository.fetchReplies(commentId);
+                if (replies) {
+                    return { status: 200, replies: replies };
+                }
+                else {
+                    return { status: 401, replies: null };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    addToWishlist(productId, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.UserRepository.addToWishlist(productId, userId);
+                if (result) {
+                    return { status: 200, message: result.message };
+                }
+                else {
+                    return { status: 401, message: 'Adding to Wishlist failed' };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    fetchUserWishlist(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userWishlist = yield this.UserRepository.fetchUserWishlist(userId);
+                if (userWishlist) {
+                    return { status: 200, userWishlist: userWishlist };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    removeFromWishlist(productId, userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const userWishlist = yield this.UserRepository.removeFromWishlist(productId, userId);
+                if (userWishlist) {
+                    return { status: 200, success: true };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
             }
         });
     }

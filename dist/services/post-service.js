@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostService = void 0;
 const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const gemini_1 = require("../config/gemini");
 class PostService {
     constructor(PostRespository, UserRepository) {
         this.PostRespository = PostRespository;
@@ -37,6 +38,23 @@ class PostService {
                     else {
                         return { status: 401, message: "Post Uploading failed" };
                     }
+                }
+            }
+            catch (err) {
+                console.error("Error occured in user upload post in user service", err);
+            }
+        });
+    }
+    generateCaption(postImage) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const caption = yield (0, gemini_1.captionGenerate)(postImage);
+                console.log('caption generated in user service', caption);
+                if (caption) {
+                    return { status: 200, caption: caption };
+                }
+                else {
+                    return { status: 401, caption: 'Caption not generated ,please try again' };
                 }
             }
             catch (err) {
@@ -167,6 +185,20 @@ class PostService {
             catch (err) {
                 console.error("Error occured in delete post in user service", err);
             }
+        });
+    }
+    replyComment(userId, reply, commentId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.PostRespository.replyComment(userId, reply, commentId);
+                if (result) {
+                    return { status: 200, message: "Replied Succeed" };
+                }
+                else {
+                    return { status: 401, message: "Reply adding failed" };
+                }
+            }
+            catch (err) { }
         });
     }
 }

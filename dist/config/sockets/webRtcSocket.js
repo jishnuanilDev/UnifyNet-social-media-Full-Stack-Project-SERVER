@@ -1,9 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.webRtcSocket = void 0;
 const socket_io_1 = require("socket.io");
+const express_1 = __importDefault(require("express"));
+const app = (0, express_1.default)();
 let activeUsers = [];
-const webRtcSocket = (server) => {
+const server = app.listen(4000, () => {
+    console.log(`Server running on port 4000 for web rtc video socket`);
+});
+const webRtcSocket = () => {
     console.log("yeah webrtc working fine");
     const io = new socket_io_1.Server(server, {
         cors: {
@@ -52,7 +60,8 @@ const webRtcSocket = (server) => {
             const user = activeUsers.find((user) => user.username === data.to);
             if (user) {
                 console.log("User gotcha for end user", data.to);
-                io.to(user.socketId).emit("callEnded");
+                // io.to(user.socketId).emit("callEnded");
+                socket.broadcast.emit("callEnded");
             }
             else {
                 console.log("User not found for end call", data.to);

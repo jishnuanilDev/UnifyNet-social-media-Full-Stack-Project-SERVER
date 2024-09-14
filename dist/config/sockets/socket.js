@@ -1,9 +1,18 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initializeSocket = void 0;
+exports.chatInitializeSocket = void 0;
+const express_1 = __importDefault(require("express"));
 const socket_io_1 = require("socket.io");
+const app = (0, express_1.default)();
 let activeUsers = [];
-const initializeSocket = (server) => {
+const server = app.listen(8000, () => {
+    console.log(`Server running on port 8000 for chat socket`);
+});
+const chatInitializeSocket = () => {
+    console.log('chat socket working fine');
     const io = new socket_io_1.Server(server, {
         cors: {
             origin: "http://localhost:3000",
@@ -35,6 +44,19 @@ const initializeSocket = (server) => {
                 io.to(user.socketId).emit("receiveMessage", data);
             }
         });
+        socket.on("typing", (data) => {
+            const { recieverId } = data;
+            if (recieverId) {
+                console.log('yooo partner id in for set typing status', recieverId);
+                socket.broadcast.emit("userTyping", recieverId.username);
+            }
+        });
+        socket.on("stopTyping", (data) => {
+            const { recieverId } = data;
+            if (recieverId) {
+                socket.broadcast.emit("userStoppedTyping", recieverId.username);
+            }
+        });
         socket.on("disconnect", () => {
             activeUsers = activeUsers.filter((user) => user.socketId !== socket.id);
             console.log("socket disconnected", activeUsers);
@@ -43,4 +65,4 @@ const initializeSocket = (server) => {
     });
     return io;
 };
-exports.initializeSocket = initializeSocket;
+exports.chatInitializeSocket = chatInitializeSocket;

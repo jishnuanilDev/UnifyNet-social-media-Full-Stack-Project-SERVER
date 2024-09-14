@@ -200,5 +200,48 @@ class AdminService {
             }
         });
     }
+    fetchProducts() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const products = yield this.AdminRepository.fetchProducts();
+                if (products) {
+                    return { status: 200, products: products };
+                }
+            }
+            catch (err) {
+                console.log("error occured in edit community name in user service", err);
+            }
+        });
+    }
+    unlistProduct(productId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const products = yield this.AdminRepository.unlistProduct(productId);
+                return { status: 200, message: 'Product unlisted Successfully' };
+            }
+            catch (err) {
+                console.error("Error occured in fetching users in admin service", err);
+                return {
+                    status: 500,
+                    message: "Product Unlisting failed",
+                };
+            }
+        });
+    }
+    listProduct(productId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const products = yield this.AdminRepository.listProduct(productId);
+                return { status: 200, message: 'Product listed Successfully' };
+            }
+            catch (err) {
+                console.error("Error occured in fetching users in admin service", err);
+                return {
+                    status: 500,
+                    message: "Product Listing failed",
+                };
+            }
+        });
+    }
 }
 exports.AdminService = AdminService;

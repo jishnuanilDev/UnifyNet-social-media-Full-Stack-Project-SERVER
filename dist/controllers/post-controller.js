@@ -27,6 +27,18 @@ class PostController {
                 console.error("Error occured in createPost user controller");
             }
         });
+        this.generateCaption = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { postImage } = req.body;
+                const result = yield this.PostService.generateCaption(postImage);
+                if (result) {
+                    res.status(result === null || result === void 0 ? void 0 : result.status).json({ caption: result === null || result === void 0 ? void 0 : result.caption });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in createPost user controller");
+            }
+        });
         this.fetchPosts = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 const result = yield this.PostService.fetchPosts();
@@ -153,6 +165,20 @@ class PostController {
                 }
             }
             catch (err) {
+            }
+        });
+        this.replyComment = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = req.user;
+                const { reply, commentId } = req.body;
+                const { _id: userId } = req.user;
+                const result = yield this.PostService.replyComment(userId, reply, commentId);
+                if (result) {
+                    res.status(result.status).json({ message: result.message });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in reply comment post controller");
             }
         });
     }

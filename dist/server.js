@@ -37,9 +37,9 @@ app.use("/", post_routes_1.default);
 app.use("/admin", admin_routes_1.default);
 (0, database_1.default)();
 const server = http_1.default.createServer(app);
-(0, socket_1.initializeSocket)(PORT);
-(0, webRtcSocket_1.webRtcSocket)(PORT);
-(0, notificatonSocket_1.notificationSocket)(PORT);
+(0, socket_1.chatInitializeSocket)();
+(0, webRtcSocket_1.webRtcSocket)();
+(0, notificatonSocket_1.notificationSocket)();
 app.listen(PORT, () => {
     console.log(`Server running on PORT ${PORT}`);
 });

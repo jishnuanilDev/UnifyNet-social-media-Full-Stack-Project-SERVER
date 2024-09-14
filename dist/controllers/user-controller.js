@@ -8,8 +8,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
+const cloudinary_1 = __importDefault(require("../config/cloudinary"));
+const products_1 = __importDefault(require("../models/products"));
 class UserController {
     constructor(userService) {
         this.userService = userService;
@@ -20,9 +25,11 @@ class UserController {
                 console.log("Login credentials::", email, password);
                 const result = yield this.userService.loginData(email, password);
                 console.log("token after generated", result.token);
-                res
-                    .status(result.status)
-                    .json({ message: result.message, userToken: result.token, userIsBlocked: result.userIsBlocked });
+                res.status(result.status).json({
+                    message: result.message,
+                    userToken: result.token,
+                    userIsBlocked: result.userIsBlocked,
+                });
             }
             catch (err) {
                 console.error("Error occurred in login data", err);
@@ -67,13 +74,11 @@ class UserController {
             }
         });
         this.updateProfile = (req, res) => __awaiter(this, void 0, void 0, function* () {
-            var _a;
             try {
-                const { username, fullname, bio } = req.body;
+                const { username, fullname, bio, image } = req.body;
                 const user = req.user;
                 const { email } = user;
-                const profilePic = (_a = req.file) === null || _a === void 0 ? void 0 : _a.filename;
-                const result = yield this.userService.updateProfile(username, fullname, bio, email, profilePic);
+                const result = yield this.userService.updateProfile(username, fullname, bio, email, image);
                 if (result) {
                     res.status(result.status).json({ message: result.message });
                 }
@@ -398,7 +403,7 @@ class UserController {
         });
         this.unsendMessage = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('req.body for unsend message', req.body);
+                console.log("req.body for unsend message", req.body);
                 const { messageId, chatId } = req.body;
                 const user = req.user;
                 const { _id: userId } = user;
@@ -413,7 +418,7 @@ class UserController {
         });
         this.unsendCommunityMessage = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('req.body for unsend community message', req.body);
+                console.log("req.body for unsend community message", req.body);
                 const { messageId, communityId } = req.body;
                 const user = req.user;
                 const { _id: userId } = user;
@@ -428,18 +433,191 @@ class UserController {
         });
         this.getNotifications = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                console.log('/get notifications for fetching notifications');
+                console.log("/get notifications for fetching notifications");
                 const user = req.user;
                 const { _id: userId } = user;
                 const result = yield this.userService.fetchNotifications(userId);
                 if (result) {
-                    res
-                        .status(result.status)
-                        .json({ notifications: result.notifications });
+                    res.status(result.status).json({ notifications: result.notifications });
                 }
             }
             catch (err) {
                 console.error("Error occured get converstions in user controller", err);
+            }
+        });
+        this.ReadNotification = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log("req.body for mark as read notification", req.body);
+                const { notificationId } = req.body;
+                const user = req.user;
+                const { _id: userId } = user;
+                const result = yield this.userService.ReadNotification(userId, notificationId);
+                if (result) {
+                    res.status(result.status).json({ message: result.message });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.clearAllNotifications = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = req.user;
+                const { _id: userId } = user;
+                const result = yield this.userService.clearAllNotifications(userId);
+                if (result) {
+                    res.status(result.status).json({ message: result.message });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.sellNewProduct = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                console.log("sell new product reached server....");
+                const user = req.user;
+                const { _id: userId } = user;
+                const { title, price, category, condition, location, description, images, } = req.body;
+                console.log("req.body for  new product", title, price, category);
+                const imageUploadPromises = images.map((base64Image) => new Promise((resolve, reject) => {
+                    // Determine the image type based on the prefix
+                    const matches = base64Image.match(/^data:(image\/[^;]+);base64,(.+)$/);
+                    if (!matches) {
+                        return reject(new Error("Invalid base64 image format"));
+                    }
+                    const [, mimeType, base64Data] = matches;
+                    // Upload to Cloudinary
+                    cloudinary_1.default.uploader
+                        .upload_stream({
+                        folder: "products",
+                        resource_type: "image",
+                        format: mimeType.split("/")[1],
+                    }, (error, result) => {
+                        if (error) {
+                            reject(error);
+                        }
+                        else {
+                            resolve(result);
+                        }
+                    })
+                        .end(Buffer.from(base64Data, "base64"));
+                }));
+                const imageUploadResults = yield Promise.all(imageUploadPromises);
+                const imageUrls = imageUploadResults.map((result) => result.secure_url);
+                const newProduct = new products_1.default({
+                    sellerId: userId,
+                    title,
+                    price,
+                    category,
+                    condition,
+                    location,
+                    description,
+                    images: imageUrls,
+                });
+                yield newProduct.save();
+                res.status(201).json({ message: "Product created successfully" });
+            }
+            catch (err) {
+                console.error("Error creating product:", err);
+                res
+                    .status(500)
+                    .json({ error: "An error occurred while creating the product" });
+            }
+        });
+        this.fetchProducts = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.userService.fetchProducts();
+                if (result) {
+                    res.status(result.status).json({ products: result.products });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.fetchUserLists = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = req.user;
+                const { _id: userId } = user;
+                const result = yield this.userService.fetchUserLists(userId);
+                if (result) {
+                    res.status(result.status).json({ userLists: result.userLists });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.markAsSold = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = req.user;
+                const { listId } = req.body;
+                const { _id: userId } = user;
+                const result = yield this.userService.markAsSold(listId);
+                if (result) {
+                    res.status(result.status).json({ message: result.message, success: result.success });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.fetchReplies = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { commentId } = req.params;
+                console.log('commentID in params for replies f', commentId);
+                const result = yield this.userService.fetchReplies(commentId);
+                if (result) {
+                    res.status(result.status).json({ replies: result.replies });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.addToWishlist = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { productId } = req.body;
+                const user = req.user;
+                const { _id: userId } = user;
+                console.log('productId for add to wishlist', productId);
+                const result = yield this.userService.addToWishlist(productId, userId);
+                if (result) {
+                    res.status(result.status).json({ message: result.message });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.fetchUserWishlist = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = req.user;
+                const { _id: userId } = user;
+                console.log('fetching user wishlists.....');
+                const result = yield this.userService.fetchUserWishlist(userId);
+                if (result) {
+                    res.status(result.status).json({ userWishlist: result.userWishlist });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.removeFromWishlist = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = req.user;
+                const { listId } = req.body;
+                const { _id: userId } = user;
+                console.log('remove product wishlists.....');
+                const result = yield this.userService.removeFromWishlist(userId, listId);
+                if (result) {
+                    res.status(result.status).json({ success: result.success });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
             }
         });
     }

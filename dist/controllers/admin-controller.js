@@ -89,7 +89,6 @@ class AdminController {
         });
         this.blockUser = (req, res) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const admin = req.admin;
                 const { userId } = req.body;
                 const result = yield this.AdminService.blockUser(userId);
                 if (result) {
@@ -131,6 +130,41 @@ class AdminController {
             }
             catch (err) {
                 console.error("Error occured in fetch premium user transactions monthly in admin control", err);
+            }
+        });
+        this.fetchProducts = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const result = yield this.AdminService.fetchProducts();
+                if (result) {
+                    res.status(result.status).json({ products: result.products });
+                }
+            }
+            catch (err) {
+                console.error("Error occured in unsend Message in user controller", err);
+            }
+        });
+        this.unlistProduct = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { productId } = req.body;
+                console.log('Unlist product with productId', productId);
+                console.log('product unlist server side access it');
+                const result = yield this.AdminService.unlistProduct(productId);
+                res.status(result.status).json({ message: result.message });
+            }
+            catch (err) {
+                console.error("Error occured in fetchUsers in admin control", err);
+            }
+        });
+        this.listProduct = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { productId } = req.body;
+                console.log('list product with productId', productId);
+                console.log('product list server side access it');
+                const result = yield this.AdminService.listProduct(productId);
+                res.status(result.status).json({ message: result.message });
+            }
+            catch (err) {
+                console.error("Error occured in fetchUsers in admin control", err);
             }
         });
     }

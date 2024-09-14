@@ -18,7 +18,8 @@ const post_1 = __importDefault(require("../models/post"));
 const admin_1 = __importDefault(require("../models/admin"));
 const premiumUser_1 = __importDefault(require("../models/premiumUser"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const comments_1 = __importDefault(require("../models/comments"));
+const comments_1 = require("../models/comments");
+const products_1 = __importDefault(require("../models/products"));
 class AdminRepository {
     adminFindByEmail(email) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -61,7 +62,7 @@ class AdminRepository {
     fetchAllComments() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                return yield comments_1.default.find({});
+                return yield comments_1.Comment.find({});
             }
             catch (err) {
                 console.error("error occured during in fetching users in admin panel", err);
@@ -200,6 +201,46 @@ class AdminRepository {
             }
             catch (err) {
                 console.error("Error occurred in yearly transactions", err);
+            }
+        });
+    }
+    fetchProducts() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                return yield products_1.default.find();
+            }
+            catch (err) {
+                console.error("Error occured in product fetching in user repository", err);
+            }
+        });
+    }
+    unlistProduct(productId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const product = yield products_1.default.findById(productId);
+                if (!product) {
+                    throw new Error("product not found");
+                }
+                product.isListed = false;
+                yield product.save();
+            }
+            catch (err) {
+                console.error("Error occurred during unlisting post", err);
+            }
+        });
+    }
+    listProduct(productId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const product = yield products_1.default.findById(productId);
+                if (!product) {
+                    throw new Error("product not found");
+                }
+                product.isListed = true;
+                yield product.save();
+            }
+            catch (err) {
+                console.error("Error occurred during unlisting post", err);
             }
         });
     }

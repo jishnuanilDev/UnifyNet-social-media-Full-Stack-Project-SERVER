@@ -15,7 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PostRespository = void 0;
 const user_1 = require("../models/user");
 const post_1 = __importDefault(require("../models/post"));
-const comments_1 = __importDefault(require("../models/comments"));
+const comments_1 = require("../models/comments");
 class PostRespository {
     constructor(UserRepository) {
         this.UserRepository = UserRepository;
@@ -51,7 +51,10 @@ class PostRespository {
                     .populate("user", "username")
                     .populate({
                     path: "comments",
-                    populate: { path: "user", select: "username" },
+                    populate: [
+                        { path: "user", select: "username" },
+                        { path: "replies", populate: { path: "user", select: "username" } },
+                    ],
                 })
                     .sort({ createdAt: -1 })
                     .exec();
@@ -129,7 +132,7 @@ class PostRespository {
                 if (!user) {
                     throw new Error("User not found ");
                 }
-                yield user.populate('savedPost');
+                yield user.populate("savedPost");
                 return user.savedPost || [];
             }
             catch (err) {
@@ -144,7 +147,7 @@ class PostRespository {
                 if (!user) {
                     throw new Error("User not found ");
                 }
-                const newComment = new comments_1.default({
+                const newComment = new comments_1.Comment({
                     post: postId,
                     user: userId,
                     comment: comment,
@@ -199,12 +202,12 @@ class PostRespository {
                 if (!post) {
                     throw new Error("Post not found");
                 }
-                if (post.user.toString() !== userId) {
-                    throw new Error("Unauthorized: User does not have permission to delete this post");
+                if (post.user.toString() == userId) {
+                    yield post_1.default.findByIdAndDelete(postId);
+                    return { message: "Post deleted successfully" };
                 }
+                return { message: "You are not authorized for delete this post" };
                 // Delete the post
-                yield post_1.default.findByIdAndDelete(postId);
-                return { message: "Post deleted successfully" };
             }
             catch (err) {
                 console.error("Error occurred during deletePost in repository", err);
@@ -248,6 +251,32 @@ class PostRespository {
             catch (err) {
                 console.error("Error occurred during savePost in repository", err);
                 throw err;
+            }
+        });
+    }
+    replyComment(userId, reply, commentId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const user = yield user_1.User.findById(userId);
+                if (!user) {
+                    throw new Error("User not found for reply comment");
+                }
+                const newReplyComment = new comments_1.ReplyComment({
+                    comment: commentId,
+                    user: userId,
+                    commentReply: reply,
+                });
+                const savedReply = yield newReplyComment.save();
+                const comment = yield comments_1.Comment.findByIdAndUpdate(commentId, {
+                    $push: { replies: { $each: [savedReply._id], $position: 0 } },
+                }, { new: true });
+                if (!comment) {
+                    throw new Error("comment not found for add reply");
+                }
+                return comment;
+            }
+            catch (err) {
+                console.error("Error occured during post comment repository", err);
             }
         });
     }
