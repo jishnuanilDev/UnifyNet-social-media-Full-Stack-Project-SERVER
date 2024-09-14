@@ -8,6 +8,7 @@ interface IComment extends Document {
 }
 
 const replySchema = new mongoose.Schema({
+  comment: { type: mongoose.Schema.Types.ObjectId, ref: "Comment" },
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   commentReply: String,
   createdAt: { type: Date, default: Date.now },
@@ -28,7 +29,7 @@ const commentSchema = new mongoose.Schema<IComment>(
       required: true,
     },
     comment: { type: String, required: true },
-    replies: [replySchema],
+    replies: [{type:mongoose.Schema.Types.ObjectId,ref:'ReplyComment'}],
     createdAt: { type: Date, default: Date.now },
   },
   {
@@ -36,5 +37,6 @@ const commentSchema = new mongoose.Schema<IComment>(
   }
 );
 
-const Comment = mongoose.model<IComment>("Comment", commentSchema);
-export default Comment;
+const Comment = mongoose.model<IComment>("Comment",commentSchema);
+const ReplyComment = mongoose.model("ReplyComment",replySchema)
+export {Comment,ReplyComment};

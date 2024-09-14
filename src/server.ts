@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Application } from "express";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import connectDb from "./config/database";
@@ -9,11 +9,19 @@ import postRouter from "./routes/post-routes";
 import adminRouter from "./routes/admin-routes";
 import nocache = require("nocache");
 import path from "path";
+import http from "http";
+import { chatInitializeSocket } from "./config/sockets/socket";
+import { webRtcSocket } from "./config/sockets/webRtcSocket";
+import { notificationSocket } from "./config/sockets/notificatonSocket";
+import { Server, Socket } from "socket.io";
+
+
 
 dotenv.config();
 
-const app = express();
+const app: Application = express();
 const PORT = 5000;
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
@@ -34,6 +42,17 @@ app.use("/", postRouter);
 app.use("/admin", adminRouter);
 
 connectDb();
+
+const server = http.createServer(app);
+
+chatInitializeSocket();
+webRtcSocket();
+notificationSocket();
+
+
+
+
+
 app.listen(PORT, () => {
   console.log(`Server running on PORT ${PORT}`);
 });

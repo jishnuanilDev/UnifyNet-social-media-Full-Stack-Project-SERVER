@@ -3,8 +3,9 @@ import { UserRepository } from "repositories/user-repository";
 import { otpGenerator } from "../config/otp-generator";
 import bcrypt from "bcrypt";
 import { sendMail } from "../config/otp-mailer";
-import { generateToken } from "../config/jwt";
+import { generateToken } from "../config/userAuth";
 import cloudinary from "../config/cloudinary";
+import { captionGenerate } from "../config/gemini";
 
 export class PostService {
   constructor(
@@ -36,6 +37,20 @@ export class PostService {
           return { status: 401, message: "Post Uploading failed" };
         }
       }
+    } catch (err) {
+      console.error("Error occured in user upload post in user service", err);
+    }
+  }
+
+  async generateCaption(postImage:any) {
+    try {
+const caption = await captionGenerate(postImage);
+console.log('caption generated in user service',caption)
+if(caption){
+  return { status: 200, caption: caption };
+}else{
+  return { status: 401, caption: 'Caption not generated ,please try again' };
+}
     } catch (err) {
       console.error("Error occured in user upload post in user service", err);
     }
@@ -79,6 +94,15 @@ export class PostService {
     }
   }
 
+  async fetchUserSavedPosts(email: string) {
+    try {
+      const savedPosts = await this.PostRespository.fetchUserSavedPosts(email);
+      return { status: 200, savedPosts: savedPosts };
+    } catch (err) {
+      console.error("Error occured in fetch user posts in user service", err);
+    }
+  }
+
   async postComment(userId: string, comment: string, postId: string) {
     try {
       const result = await this.PostRespository.postComment(
@@ -105,6 +129,55 @@ export class PostService {
         return { status: 200, message: "Report Submitted" };
       } else {
         return { status: 401, message: "Report submitting failed" };
+      }
+    } catch (err) {}
+  }
+
+  async deletePost(userId:string,postId:string){
+    try{
+const result = await this.PostRespository.deletePost(userId,postId);
+if(result){
+  return { status: 200, message:result.message};
+}
+    }catch(err){
+      console.error("Error occured in delete post in user service", err);
+    }
+  }
+
+  async savePost(userId:string,postId:string){
+    try{
+const result = await this.PostRespository.savePost(userId,postId);
+
+if(result){
+  return { status: 200, message:result.message};
+}
+    }catch(err){
+      console.error("Error occured in delete post in user service", err);
+    }
+  }
+
+  async unsavePost(userId:string,postId:string){
+    try{
+const result = await this.PostRespository.unsavePost(userId,postId);
+
+if(result){
+  return { status: 200, message:result.message};
+}
+    }catch(err){
+      console.error("Error occured in delete post in user service", err);
+    }
+  }
+  async replyComment(userId:string,reply:string,commentId:string) {
+    try {
+      const result = await this.PostRespository.replyComment(
+        userId,
+        reply,
+        commentId
+      );
+      if (result) {
+        return { status: 200, message: "Replied Succeed" };
+      } else {
+        return { status: 401, message: "Reply adding failed" };
       }
     } catch (err) {}
   }

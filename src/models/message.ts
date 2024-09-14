@@ -3,6 +3,7 @@ import  { Document} from 'mongoose';
 
 interface IchatMessage {
   chat:mongoose.Types.ObjectId ;
+  community:mongoose.Types.ObjectId ;
   sender: mongoose.Types.ObjectId;
   message: string;
   status: 'seen' | 'delivered';

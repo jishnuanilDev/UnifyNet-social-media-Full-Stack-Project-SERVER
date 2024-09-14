@@ -1,0 +1,26 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const admin_repository_1 = require("../repositories/admin-repository");
+const admin_service_1 = require("../services/admin-service");
+const admin_controller_1 = require("../controllers/admin-controller");
+const express_1 = __importDefault(require("express"));
+const adminAuth_1 = require("../middlewares/adminAuth");
+const adminRepository = new admin_repository_1.AdminRepository();
+const adminService = new admin_service_1.AdminService(adminRepository);
+const adminController = new admin_controller_1.AdminController(adminService);
+const adminRouter = express_1.default.Router();
+adminRouter.get("/getUsers", adminController.fetchUsers);
+adminRouter.get("/get-comments", adminController.fetchComments);
+adminRouter.post("/admin-login", adminController.adminLogin);
+adminRouter.get("/getReportPosts", adminController.fetchReportPosts);
+adminRouter.post("/unlist-post", adminController.unlistPost);
+adminRouter.post("/list-post", adminController.listPost);
+adminRouter.get("/premium-users", adminController.getPremiumUsers);
+adminRouter.post("/block-user", adminAuth_1.protectAdmin, adminController.blockUser);
+adminRouter.get("/premium-users/count/weekly", adminController.premiumUserWeeklyTransaction);
+adminRouter.get("/premium-users/count/monthly", adminController.premiumUserMonthlyTransaction);
+adminRouter.get("/premium-users/count/yearly", adminController.premiumUserYearlyTransaction);
+exports.default = adminRouter;

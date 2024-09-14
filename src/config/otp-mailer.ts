@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
     user: "jishnuanil255@gmail.com",
     pass: "ytdi bmwq kals piha",
   },
-});
+}); 
 
 export function sendMail(email: string, text: string) {
   const mailOptions: SendMailOptions = {

@@ -1,0 +1,28 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const post_controller_1 = require("../controllers/post-controller");
+const post_service_1 = require("../services/post-service");
+const post_repository_1 = require("../repositories/post-repository");
+const auth_1 = require("../middlewares/auth");
+const user_repository_1 = require("../repositories/user-repository");
+const userRespository = new user_repository_1.UserRepository();
+const postRespository = new post_repository_1.PostRespository(userRespository);
+const postService = new post_service_1.PostService(postRespository, userRespository);
+const postController = new post_controller_1.PostController(postService);
+const postRouter = express_1.default.Router();
+postRouter.post("/create-post", auth_1.protect, postController.createPost);
+postRouter.get("/get-posts", postController.fetchPosts);
+postRouter.post("/like-post", auth_1.protect, postController.likePost);
+postRouter.post("/unLike-post", auth_1.protect, postController.unLikePost);
+postRouter.get("/user-posts", auth_1.protect, postController.fetchUserPosts);
+postRouter.get("/user-saved-posts", auth_1.protect, postController.fetchUserSavedPosts);
+postRouter.post("/user-comment", auth_1.protect, postController.postComment);
+postRouter.post("/report-post", auth_1.protect, postController.reportPost);
+postRouter.post("/delete-post", auth_1.protect, postController.deletePost);
+postRouter.post("/save-post", auth_1.protect, postController.savePost);
+postRouter.post("/unsave-post", auth_1.protect, postController.unsavePost);
+exports.default = postRouter;

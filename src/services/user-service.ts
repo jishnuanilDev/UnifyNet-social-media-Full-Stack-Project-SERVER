@@ -2,7 +2,7 @@ import { UserRepository } from "repositories/user-repository";
 import { otpGenerator } from "../config/otp-generator";
 import bcrypt from "bcrypt";
 import { sendMail } from "../config/otp-mailer";
-import { generateToken } from "../config/jwt";
+import { generateToken } from "../config/userAuth";
 import cloudinary from "../config/cloudinary";
 
 export class UserService {
@@ -31,7 +31,12 @@ export class UserService {
       console.log("no token get in user service");
     }
 
-    return { status: 200, message: "Login successful", token: token };
+    return {
+      status: 200,
+      message: "Login successful",
+      token: token,
+      userIsBlocked: user.isBlocked,
+    };
   }
 
   async tempSignUpdata(
@@ -132,7 +137,7 @@ export class UserService {
     fullname: string,
     bio: string,
     email: string,
-    profilePic?: string
+    image?: any
   ) {
     try {
       const user = await this.UserRepository.findUserByEmail(email);
@@ -144,12 +149,17 @@ export class UserService {
           return { status: 409, message: "Username already taken" };
         }
       }
+      const result = await cloudinary.uploader.upload(image, {
+        folder: "ProfilePic",
+      });
+    
+      
       const updatedUser = await this.UserRepository.updateUserProfile(
         username,
         fullname,
         bio,
         email,
-        profilePic
+        result.secure_url
       );
       if (updatedUser) {
         return {
@@ -304,9 +314,23 @@ export class UserService {
     }
   }
 
-  async blueTickProceed(userId: string) {
+  async blueTickProceed(
+    userId: string,
+    fullname: string,
+    phone: number,
+    email: string,
+    dateOfBirth: string,
+    address: string
+  ) {
     try {
-      const result = await this.UserRepository.blueTickProceed(userId);
+      const result = await this.UserRepository.blueTickProceed(
+        userId,
+        fullname,
+        phone,
+        email,
+        dateOfBirth,
+        address
+      );
       if (result) {
         return { status: 200, message: "Premium Activated Successfully" };
       }
@@ -315,12 +339,15 @@ export class UserService {
     }
   }
 
-  async createNewChat(userId: string,participantId:string) {
+  async createNewChat(userId: string, participantId: string) {
     try {
-      const result = await this.UserRepository.createNewChat(userId,participantId);
+      const result = await this.UserRepository.createNewChat(
+        userId,
+        participantId
+      );
       if (result) {
         return { status: 200, message: "Chat Created Successfully" };
-      }else{
+      } else {
         return { status: 401, message: "Chat already exist" };
       }
     } catch (err) {
@@ -328,39 +355,341 @@ export class UserService {
     }
   }
 
-  async fetchUserConversations(userId:string){
-    try{
-const chats = await this.UserRepository.fetchUserConversations(userId);
-if(chats){
-
-  return { status: 200, chats: chats };
-}
-    }catch(err){
+  async fetchUserConversations(userId: string) {
+    try {
+      const chats = await this.UserRepository.fetchUserConversations(userId);
+      if (chats) {
+        return { status: 200, chats: chats };
+      }
+    } catch (err) {
       console.error("Error occured in get conversations in user service", err);
     }
   }
 
-  async sendMessage(userId:string,chatId:string,message:string){
-    try{
-const savedMessage = await this.UserRepository.sendMessage(userId,chatId,message);
-if(savedMessage){
-  return { status: 200, savedMessage: savedMessage};
-}else{
-  return { status: 401, message: "Message not send" };
-}
-    }catch(err){
-      console.log("error occured in sending message in user service",err)
+  async sendMessage(userId: string, chatId: string, message: string) {
+    try {
+      const savedMessage = await this.UserRepository.sendMessage(
+        userId,
+        chatId,
+        message
+      );
+      if (savedMessage) {
+        return { status: 200, savedMessage: savedMessage };
+      } else {
+        return { status: 401, message: "Message not send" };
+      }
+    } catch (err) {
+      console.log("error occured in sending message in user service", err);
     }
   }
 
-  async getMessages(chatId:string){
-    try{
-const chatMessages = await this.UserRepository.getMessages(chatId);
-if(chatMessages){
-  return { status: 200, chatMessages: chatMessages };
-}
-    }catch(err){
-      console.log("error occured in get messages in user service",err)
+  async getMessages(chatId: string) {
+    try {
+      const chatMessages = await this.UserRepository.getMessages(chatId);
+      if (chatMessages) {
+        return { status: 200, chatMessages: chatMessages };
+      }
+    } catch (err) {
+      console.log("error occured in get messages in user service", err);
+    }
+  }
+
+  async createCommunity(
+    userId: string,
+    participantId: string,
+    communityName: string
+  ) {
+    try {
+      const result = await this.UserRepository.createCommunity(
+        userId,
+        participantId,
+        communityName
+      );
+      if (result) {
+        return { status: 200, message: "community Created Successfully" };
+      }
+    } catch (err) {
+      console.error("Error occured in create new chat in user service", err);
+    }
+  }
+  async fetchCommunities(userId: string) {
+    try {
+      const communities = await this.UserRepository.fetchCommunities(userId);
+      if (communities) {
+        return { status: 200, communities: communities };
+      }
+    } catch (err) {
+      console.error("Error occured in get conversations in user service", err);
+    }
+  }
+
+  async sendCommunityMessage(
+    userId: string,
+    communityId: string,
+    message: string
+  ) {
+    try {
+      const savedMessage = await this.UserRepository.sendCommunityMessage(
+        userId,
+        communityId,
+        message
+      );
+      if (savedMessage) {
+        return { status: 200, savedMessage: savedMessage };
+      } else {
+        return { status: 401, message: "Message not send" };
+      }
+    } catch (err) {
+      console.log("error occured in sending message in user service", err);
+    }
+  }
+
+  async getCommunityMessages(communityId: string) {
+    try {
+      const communityChatMessages =
+        await this.UserRepository.getCommunityMessages(communityId);
+      if (communityChatMessages) {
+        return { status: 200, communityChatMessages: communityChatMessages };
+      }
+    } catch (err) {
+      console.log("error occured in get messages in user service", err);
+    }
+  }
+
+  async cancelPremium(userId: string) {
+    try {
+      const user = await this.UserRepository.cancelPremium(userId);
+      if (user) {
+        return { status: 200, user: user };
+      }
+    } catch (err) {
+      console.log("error occured in cancel premium in user service", err);
+    }
+  }
+
+  async editCommunity(
+    userId: string,
+    communityId: string,
+    participantId: string
+  ) {
+    try {
+      const result = await this.UserRepository.editCommunity(
+        userId,
+        communityId,
+        participantId
+      );
+      if (result) {
+        return { status: 200, message: "community edited Successfully" };
+      } else {
+        return { status: 401, message: "Member already exist " };
+      }
+    } catch (err) {
+      console.error("Error occured in create new chat in user service", err);
+    }
+  }
+
+  async removeUserFromCommunity(memberId: string, communityId: string) {
+    try {
+      const result = await this.UserRepository.removeUserFromCommunity(
+        memberId,
+        communityId
+      );
+      if (result) {
+        return { status: 200, message: "you removed " };
+      } else {
+        return { status: 401, message: "Remove failed " };
+      }
+    } catch (err) {
+      console.log(
+        "error occured in remove user from community in user service",
+        err
+      );
+    }
+  }
+
+  async exitCommunity(userId: string, communityId: string) {
+    try {
+      const result = await this.UserRepository.exitCommunity(
+        userId,
+        communityId
+      );
+      if (result) {
+        return { status: 200, message: "you exited successfully " };
+      } else {
+        return { status: 401, message: "Exiting failed " };
+      }
+    } catch (err) {
+      console.log(
+        "error occured in remove user from community in user service",
+        err
+      );
+    }
+  }
+
+  async editCommunityName(communityName: string, communityId: string) {
+    try {
+      const result = await this.UserRepository.editCommunityName(
+        communityName,
+        communityId
+      );
+      if (result) {
+        return { status: 200, message: "Renamed succesfully " };
+      } else {
+        return { status: 401, message: "Renamed failed " };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async unsendMessage(userId: string, messageId: string, chatId: string) {
+    try {
+      const result = await this.UserRepository.unsendMessage(
+        userId,
+        messageId,
+        chatId
+      );
+      return { status: 200, message: "Message Removed " };
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async unsendCommunityMessage(
+    userId: string,
+    messageId: string,
+    communityId: string
+  ) {
+    try {
+      const result = await this.UserRepository.unsendCommunityMessage(
+        userId,
+        messageId,
+        communityId
+      );
+      return { status: 200, message: " Message Removed " };
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async fetchNotifications(userId: string) {
+    try {
+      const notifications = await this.UserRepository.fetchNotifications(
+        userId
+      );
+      if (notifications) {
+        return { status: 200, notifications: notifications };
+      }
+    } catch (err) {
+      console.error("Error occured in get conversations in user service", err);
+    }
+  }
+
+  async ReadNotification(userId: string, notificationId: string) {
+    try {
+      const result = await this.UserRepository.ReadNotification(
+        userId,
+        notificationId
+      );
+      if (result) {
+        return { status: 200, message: "Marked as read " };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async clearAllNotifications(userId: string) {
+    try {
+      const result = await this.UserRepository.clearAllNotifications(userId);
+      if (result) {
+        return { status: 200, message: "Notifications cleared " };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+  
+  async fetchProducts() {
+    try {
+      const products = await this.UserRepository.fetchProducts();
+      if (products) {
+        return { status: 200, products:products };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async fetchUserLists(userId:string) {
+    try {
+      const userLists = await this.UserRepository.fetchUserLists(userId);
+      if (userLists) {
+        return { status: 200, userLists:userLists };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+  
+  async markAsSold(listId:string) {
+    try {
+      const result = await this.UserRepository.markAsSold(listId);
+      if (result) {
+        return { status: 200, message:'Marked as sold',success:true };
+      }else{
+        return { status: 401, message:'Failed to mark as sold ',success:false };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+  
+  async fetchReplies(commentId:string) {
+    try {
+      const replies = await this.UserRepository.fetchReplies(commentId);
+      if (replies) {
+        return { status: 200, replies:replies};
+      }else{
+        return { status: 401, replies:null};
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async addToWishlist(productId:string,userId:string) {
+    try {
+      const result = await this.UserRepository.addToWishlist(productId,userId);
+      if (result) {
+        return { status: 200, message:result.message};
+      }else{
+        return { status: 401, message:'Adding to Wishlist failed'};
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+  
+  async fetchUserWishlist(userId:string) {
+    try {
+      const userWishlist = await this.UserRepository.fetchUserWishlist(userId);
+      if (userWishlist) {
+        return { status: 200, userWishlist:userWishlist };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
+    }
+  }
+
+  async removeFromWishlist(productId:string,userId:string) {
+    try {
+      const userWishlist = await this.UserRepository.removeFromWishlist(productId,userId);
+      if (userWishlist) {
+        return { status: 200, success:true };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
     }
   }
 }
