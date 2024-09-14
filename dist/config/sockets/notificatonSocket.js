@@ -25,7 +25,7 @@ const server = app.listen(9000, () => {
 const notificationSocket = () => {
     const io = new socket_io_1.Server(server, {
         cors: {
-            origin: "http://localhost:3000",
+            origin: "*",
             methods: ['GET,POST']
         }
     });

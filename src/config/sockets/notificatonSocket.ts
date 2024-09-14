@@ -10,7 +10,7 @@ const server = app.listen(9000, () => {
 export const notificationSocket = ()=>{
     const io = new Server(server,{
         cors:{
-            origin:"http://localhost:3000",
+            origin:"*",
             methods:['GET,POST']
         }
     });
