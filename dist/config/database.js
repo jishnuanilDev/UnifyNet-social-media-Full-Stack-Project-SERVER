@@ -17,7 +17,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const connectDb = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield mongoose_1.default.connect("mongodb://localhost:27017/SocialMedia");
+        yield mongoose_1.default.connect("mongodb+srv://jis:m0ng0j15@clusterjis.fdphdyx.mongodb.net/SocialMedia?retryWrites=true&w=majority");
         console.log("mongodb connected successfully");
     }
     catch (error) {
