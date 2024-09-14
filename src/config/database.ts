@@ -5,7 +5,7 @@ dotenv.config();
 
 const connectDb = async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/SocialMedia");
+    await mongoose.connect("mongodb+srv://jis:m0ng0j15@clusterjis.fdphdyx.mongodb.net/SocialMedia?retryWrites=true&w=majority");
     console.log("mongodb connected successfully");
   } catch (error) {
     if (error instanceof Error) {
