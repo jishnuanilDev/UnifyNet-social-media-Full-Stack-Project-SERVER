@@ -27,7 +27,7 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use(
   cors({
-    origin: "*", // Adjust to your frontend URL
+    origin: "https://unifynet.jisonline.site", // Adjust to your frontend URL
     credentials: true,
   })
 );
