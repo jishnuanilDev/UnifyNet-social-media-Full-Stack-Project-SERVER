@@ -14,17 +14,17 @@ const post_routes_1 = __importDefault(require("./routes/post-routes"));
 const admin_routes_1 = __importDefault(require("./routes/admin-routes"));
 const nocache = require("nocache");
 const path_1 = __importDefault(require("path"));
-const http_1 = __importDefault(require("http"));
-const socket_1 = require("./config/sockets/socket");
-const webRtcSocket_1 = require("./config/sockets/webRtcSocket");
-const notificatonSocket_1 = require("./config/sockets/notificatonSocket");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = 5000;
 app.use(express_1.default.json({ limit: "10mb" }));
 app.use(express_1.default.urlencoded({ limit: "10mb", extended: true }));
 app.use((0, cors_1.default)({
-    origin: "https://unifynet.jisonline.site", // Adjust to your frontend URL
+    origin: [
+        "https://unifynet.jisonline.site", // Add your frontend domain
+        "http://localhost:3000", // For local development
+        "http://13.67.149.93:5000", // For testing purposes (adjust as necessary)
+    ], // Adjust to your frontend URL
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -36,10 +36,9 @@ app.use("/", user_routes_1.default);
 app.use("/", post_routes_1.default);
 app.use("/admin", admin_routes_1.default);
 (0, database_1.default)();
-const server = http_1.default.createServer(app);
-(0, socket_1.chatInitializeSocket)();
-(0, webRtcSocket_1.webRtcSocket)();
-(0, notificatonSocket_1.notificationSocket)();
+// chatInitializeSocket();
+// webRtcSocket();
+// notificationSocket();
 app.listen(PORT, () => {
     console.log(`Server running on PORT ${PORT}`);
 });

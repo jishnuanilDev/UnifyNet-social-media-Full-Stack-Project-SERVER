@@ -692,4 +692,21 @@ export class UserService {
       console.log("error occured in edit community name in user service", err);
     }
   }
+
+  async fetchUsers(userId:string) {
+    try {
+      const users = await this.UserRepository.fetchAllUsers(userId);
+      if (!users) {
+        return { status: 404, message: "No Users available" };
+      }
+
+      return { status: 200, users: users };
+    } catch (err) {
+      console.error("Error occured in fetching users in admin service", err);
+      return {
+        status: 500,
+        message: "Error occurred during fetching users in admin service",
+      };
+    }
+  }
 }

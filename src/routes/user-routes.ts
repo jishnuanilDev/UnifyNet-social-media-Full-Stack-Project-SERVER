@@ -29,7 +29,7 @@ userRouter.post(
   userController.forgotPassswordOtpVerify
 );
 userRouter.put("/reset-password", userController.resetPassword);
-
+userRouter.get("/getUsers", userController.fetchUsers); 
 userRouter.post("/search-name", userController.searchName);
 userRouter.get("/friend-profile", userController.friendProfile);
 userRouter.post("/follow", protect, userController.followProfile);

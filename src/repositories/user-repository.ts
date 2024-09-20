@@ -868,4 +868,15 @@ export class UserRepository {
       throw new Error("Error occurred while removing product from wishlist");
     }
   }
+
+  async fetchAllUsers(userId:string) {
+    try {
+      return await User.find({ _id: { $ne: userId } });
+    } catch (err) {
+      console.error(
+        "error occured during in fetching users in admin panel",
+        err
+      );
+    }
+  }
 }

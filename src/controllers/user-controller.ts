@@ -808,6 +808,18 @@ console.log('productId for add to wishlist', productId);
     }
   };
 
+  public fetchUsers = async (req: IAuthenticatedRequest, res: Response) => {
+    try {
+      const user = req.user;
+      const { _id: userId } = user as { _id: string };
+      const users = await this.userService.fetchUsers(userId);
+
+      res.status(users.status).json({ users: users.users });
+    } catch (err) {
+      console.error("Error occured in fetchUsers in admin control", err);
+    }
+  };
+
 
   
 }
