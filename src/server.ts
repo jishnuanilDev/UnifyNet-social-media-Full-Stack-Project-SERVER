@@ -36,12 +36,13 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 app.use(
   cors({
-    origin: ["https://unifynet.jisonline.site", "http://localhost:3000"],
+    origin:"*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
     allowedHeaders: "Content-Type,Authorization",
   })
 );
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(nocache());

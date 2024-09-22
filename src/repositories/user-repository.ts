@@ -113,7 +113,8 @@ export class UserRepository {
     username: string,
     phone: number,
     bio: string,
-    gender: string
+    gender: string,
+    profilePic: string
   ) {
     try {
       const user = await this.findUserByEmail(email);
@@ -124,6 +125,7 @@ export class UserRepository {
       user.phone = phone;
       user.bio = bio;
       user.gender = gender;
+      user.profilePic = profilePic;
       await user.save();
       console.log("User profile updated successfully");
       return user;
@@ -338,7 +340,9 @@ export class UserRepository {
       }
       const chats = await Chat.find({
         participants: userId,
-      }).populate("participants", "username profilePic");
+      })
+        .populate("participants", "username profilePic")
+        .sort({ updatedAt: -1 });
 
       return chats;
     } catch (err) {
@@ -808,7 +812,13 @@ export class UserRepository {
           wishlist.products.push(productId);
         }
       }
+      const product = await Product.findById(productId);
+      if (!product) {
+        return { message: "Product not found" };
+      }
+      product.isWishlisted = true;
 
+      await product?.save();
       await wishlist.save();
       return { message: "Product added to wishlist" };
     } catch (err) {
@@ -840,10 +850,11 @@ export class UserRepository {
     }
   }
 
-  async removeFromWishlist(productId: any, userId:any) {
+  async removeFromWishlist(userId: any, productId: any) {
     try {
-      const user = await User.findOne(userId)
-      const userWishlist = await Wishlist.findOne({ user: user?._id });
+      const user = await User.findOne({ _id: userId });
+      console.log('userId for remove product from wishlist',userId);
+      const userWishlist = await Wishlist.findOne({ user:userId });
 
       if (!userWishlist) {
         throw new Error("Wishlist not found for the user.");
@@ -869,7 +880,7 @@ export class UserRepository {
     }
   }
 
-  async fetchAllUsers(userId:string) {
+  async fetchAllUsers(userId: string) {
     try {
       return await User.find({ _id: { $ne: userId } });
     } catch (err) {

@@ -94,7 +94,8 @@ export class UserService {
     username: string,
     phone: number,
     bio: string,
-    gender: string
+    gender: string,
+    image?:any
   ): Promise<{ status: number; message: string; userToken?: string }> {
     try {
       const usernameExist = await this.UserRepository.findUserByUsername(
@@ -103,12 +104,16 @@ export class UserService {
       if (usernameExist) {
         return { status: 409, message: "Username already taken" };
       }
+      const result = await cloudinary.uploader.upload(image, {
+        folder: "ProfilePic",
+      });
       const updatedUser = await this.UserRepository.createUserProfile(
         email,
         username,
         phone,
         bio,
-        gender
+        gender,
+        result.secure_url
       );
       const token = await generateToken(updatedUser?._id);
       if (!token) {
@@ -681,10 +686,10 @@ export class UserService {
       console.log("error occured in edit community name in user service", err);
     }
   }
-
-  async removeFromWishlist(productId:string,userId:string) {
+  
+  async removeFromWishlist(userId:string,productId:string) {
     try {
-      const userWishlist = await this.UserRepository.removeFromWishlist(productId,userId);
+      const userWishlist = await this.UserRepository.removeFromWishlist(userId,productId);
       if (userWishlist) {
         return { status: 200, success:true };
       }

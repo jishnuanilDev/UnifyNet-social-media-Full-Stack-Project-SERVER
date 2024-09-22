@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 interface IProduct extends Document {
   sellerId: mongoose.Schema.Types.ObjectId;
@@ -7,10 +7,12 @@ interface IProduct extends Document {
   description: string;
   category: string;
   condition: string;
-  isListed:boolean;
-  images: string[];  // Array of image URLs
+  isListed: boolean;
+  isWishlisted: boolean;
+  images: string[]; // Array of image URLs
   isSold: boolean;
   buyerId?: mongoose.Schema.Types.ObjectId;
+  wishlistId?: mongoose.Schema.Types.ObjectId;
   location: string;
   createdAt: Date;
 }
@@ -19,7 +21,7 @@ const ProductSchema: Schema<IProduct> = new Schema(
   {
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       required: true,
     },
     title: {
@@ -52,9 +54,15 @@ const ProductSchema: Schema<IProduct> = new Schema(
       type: Boolean,
       default: false,
     },
+    isWishlisted: { type: Boolean, default: false },
+    wishlistId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Wishlist",
+      default: null,
+    },
     buyerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: "User",
       default: null,
     },
     isListed: { type: Boolean, default: true },
@@ -67,10 +75,10 @@ const ProductSchema: Schema<IProduct> = new Schema(
     },
   },
   {
-    timestamps: { createdAt: 'createdAt', updatedAt: false },
+    timestamps: { createdAt: "createdAt", updatedAt: false },
   }
 );
 
-const Product = mongoose.model<IProduct>('Product', ProductSchema);
+const Product = mongoose.model<IProduct>("Product", ProductSchema);
 
 export default Product;

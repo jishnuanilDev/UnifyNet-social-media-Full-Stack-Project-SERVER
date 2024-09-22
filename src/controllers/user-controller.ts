@@ -55,14 +55,15 @@ export class UserController {
 
   public createProfile = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, username, phone, bio, gender } = req.body;
+      const { email, username, phone, bio, gender, image } = req.body;
 
       const result = await this.userService.createProfile(
         email,
         username,
         phone,
         bio,
-        gender
+        gender,
+        image
       );
       console.log(
         " userToken verifying in after create profile",
@@ -96,10 +97,10 @@ export class UserController {
     res: Response
   ): Promise<void> => {
     try {
-      const { username, fullname, bio,image } = req.body;
+      const { username, fullname, bio, image } = req.body;
       const user = req.user;
       const { email } = user as { email: string };
- 
+
       const result = await this.userService.updateProfile(
         username,
         fullname,
@@ -712,7 +713,7 @@ export class UserController {
         .json({ error: "An error occurred while creating the product" });
     }
   };
-  
+
   public fetchProducts = async (req: Request, res: Response) => {
     try {
       const result = await this.userService.fetchProducts();
@@ -723,7 +724,7 @@ export class UserController {
       console.error("Error occured in unsend Message in user controller", err);
     }
   };
- 
+
   public fetchUserLists = async (req: IAuthenticatedRequest, res: Response) => {
     try {
       const user = req.user;
@@ -736,25 +737,27 @@ export class UserController {
       console.error("Error occured in unsend Message in user controller", err);
     }
   };
-  
+
   public markAsSold = async (req: IAuthenticatedRequest, res: Response) => {
     try {
       const user = req.user;
-      const {listId} = req.body;
+      const { listId } = req.body;
       const { _id: userId } = user as { _id: string };
       const result = await this.userService.markAsSold(listId);
       if (result) {
-        res.status(result.status).json({ message: result.message,success:result.success });
+        res
+          .status(result.status)
+          .json({ message: result.message, success: result.success });
       }
     } catch (err) {
       console.error("Error occured in unsend Message in user controller", err);
     }
   };
-  
+
   public fetchReplies = async (req: IAuthenticatedRequest, res: Response) => {
     try {
-      const {commentId} = req.params;
-console.log('commentID in params for replies f', commentId);
+      const { commentId } = req.params;
+      console.log("commentID in params for replies f", commentId);
       const result = await this.userService.fetchReplies(commentId);
       if (result) {
         res.status(result.status).json({ replies: result.replies });
@@ -766,11 +769,11 @@ console.log('commentID in params for replies f', commentId);
 
   public addToWishlist = async (req: IAuthenticatedRequest, res: Response) => {
     try {
-      const {productId} = req.body;
+      const { productId } = req.body;
       const user = req.user;
       const { _id: userId } = user as { _id: string };
-console.log('productId for add to wishlist', productId);
-      const result = await this.userService.addToWishlist(productId,userId);
+      console.log("productId for add to wishlist", productId);
+      const result = await this.userService.addToWishlist(productId, userId);
       if (result) {
         res.status(result.status).json({ message: result.message });
       }
@@ -778,12 +781,15 @@ console.log('productId for add to wishlist', productId);
       console.error("Error occured in unsend Message in user controller", err);
     }
   };
-  
-  public fetchUserWishlist = async (req: IAuthenticatedRequest, res: Response) => {
+
+  public fetchUserWishlist = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const user = req.user;
       const { _id: userId } = user as { _id: string };
-      console.log('fetching user wishlists.....')
+      console.log("fetching user wishlists.....");
       const result = await this.userService.fetchUserWishlist(userId);
       if (result) {
         res.status(result.status).json({ userWishlist: result.userWishlist });
@@ -793,15 +799,18 @@ console.log('productId for add to wishlist', productId);
     }
   };
 
-  public removeFromWishlist = async (req: IAuthenticatedRequest, res: Response) => {
+  public removeFromWishlist = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const user = req.user;
-      const {listId} = req.body;
+      const { listId } = req.body;
       const { _id: userId } = user as { _id: string };
-      console.log('remove product wishlists.....')
-      const result = await this.userService.removeFromWishlist(userId,listId);
+      console.log("remove product wishlists.....");
+      const result = await this.userService.removeFromWishlist(userId, listId);
       if (result) {
-        res.status(result.status).json({ success:result.success});
+        res.status(result.status).json({ success: result.success });
       }
     } catch (err) {
       console.error("Error occured in unsend Message in user controller", err);
@@ -820,6 +829,107 @@ console.log('productId for add to wishlist', productId);
     }
   };
 
+  public editProduct = async (req: IAuthenticatedRequest, res: Response) => {
+    try {
+      console.log("edit product reached server....");
+      const user = req.user;
+      const { _id: userId } = user as { _id: string };
+      const {
+        listId,
+        title,
+        price,
+        category,
+        condition,
+        location,
+        description,
+        images,
+      } = req.body;
+      console.log("req.body for  edit product", title, price, category,images);
 
-  
+      if (images && images.length >= 1) {
+        const imageUploadPromises = images.map(
+          (base64Image: string) =>
+            new Promise((resolve, reject) => {
+              // Determine the image type based on the prefix
+              const matches = base64Image.match(
+                /^data:(image\/[^;]+);base64,(.+)$/
+              );
+              if (!matches) {
+                return reject(new Error("Invalid base64 image format"));
+              }
+
+              const [, mimeType, base64Data] = matches;
+
+              // Upload to Cloudinary
+              cloudinary.uploader
+                .upload_stream(
+                  {
+                    folder: "products",
+                    resource_type: "image",
+                    format: mimeType.split("/")[1],
+                  },
+                  (error, result) => {
+                    if (error) {
+                      reject(error);
+                    } else {
+                      resolve(result);
+                    }
+                  }
+                )
+                .end(Buffer.from(base64Data, "base64"));
+            })
+        );
+        const imageUploadResults = await Promise.all(imageUploadPromises);
+        const imageUrls = imageUploadResults.map(
+          (result: any) => result.secure_url
+        );
+
+        const product = await Product.findByIdAndUpdate(
+          listId,
+          {
+            title,
+            price,
+            category,
+            condition,
+            location,
+            description,
+            image: imageUrls,
+          },
+          { new: true }
+        );
+
+        if (!product) {
+          console.log("Product not found for editing");
+          return res.status(404).json({ message: "Product not found" });
+        }
+        await product.save();
+        res.status(201).json({ message: "Product Edited successfully" });
+      } else {
+        const product = await Product.findByIdAndUpdate(
+          listId,
+          {
+            title,
+            price,
+            category,
+            condition,
+            location,
+            description,
+          },
+          { new: true }
+        );
+
+        if (!product) {
+          console.log("Product not found for editing");
+          return res.status(404).json({ message: "Product not found" });
+        }
+        await product.save();
+        res.status(201).json({ message: "Product Edited successfully" });
+      }
+    } catch (err) {
+      console.error("Error creating product:", err);
+      res
+        .status(500)
+        .json({ error: "An error occurred while creating the product" });
+    }
+  };
 }
