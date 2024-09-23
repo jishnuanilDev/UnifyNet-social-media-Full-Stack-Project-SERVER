@@ -209,7 +209,15 @@ export class UserRepository {
 
   async fetchFriendProfile(username: string) {
     try {
-      const user = User.findOne({ username }).populate("posts");
+      const user = await User.findOne({ username })
+      .populate({
+        path: "posts",          
+        populate: {
+          path: "user",        
+          select: "username",   
+        },
+      });
+    
       if (!user) {
         throw new Error("Friend not found ");
       }
