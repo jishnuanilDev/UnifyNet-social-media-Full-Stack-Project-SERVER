@@ -104,7 +104,10 @@ export class PostRespository {
         throw new Error("User not found ");
       }
 
-      const posts = await Post.find({ user: user });
+      const posts = await Post.find({ user: user }).populate({
+        path: "user",
+        select: "username",
+      });
       if (posts) {
         return posts;
       } else {
@@ -121,7 +124,14 @@ export class PostRespository {
       if (!user) {
         throw new Error("User not found ");
       }
-      await user.populate("savedPost");
+      await user.populate({
+        path: 'savedPost',  
+        populate: {
+          path: 'user',    
+          select: 'username',  
+        },
+      });
+      
       return user.savedPost || [];
     } catch (err) {
       console.error("Error occured during fetching user posts repository", err);

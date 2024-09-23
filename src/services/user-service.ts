@@ -154,17 +154,22 @@ export class UserService {
           return { status: 409, message: "Username already taken" };
         }
       }
-      const result = await cloudinary.uploader.upload(image, {
-        folder: "ProfilePic",
-      });
+
+      let imageUrl = user?.profilePic; 
+      if (image) {
+        const result = await cloudinary.uploader.upload(image, {
+          folder: "ProfilePic",
+        });
+        imageUrl = result.secure_url; // Update imageUrl if a new image is uploaded
+      }
+
     
-      
       const updatedUser = await this.UserRepository.updateUserProfile(
         username,
         fullname,
         bio,
         email,
-        result.secure_url
+        imageUrl 
       );
       if (updatedUser) {
         return {
@@ -712,6 +717,17 @@ export class UserService {
         status: 500,
         message: "Error occurred during fetching users in admin service",
       };
+    }
+  }
+
+  async deleteList(userId:string,productId:string) {
+    try {
+      const list = await this.UserRepository.deleteList(userId,productId);
+      if (list) {
+        return { status: 200, success:true };
+      }
+    } catch (err) {
+      console.log("error occured in edit community name in user service", err);
     }
   }
 }

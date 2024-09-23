@@ -932,4 +932,22 @@ export class UserController {
         .json({ error: "An error occurred while creating the product" });
     }
   };
+
+  public deleteList = async (
+    req: IAuthenticatedRequest,
+    res: Response
+  ) => {
+    try {
+      const user = req.user;
+      const { listId } = req.body;
+      const { _id: userId } = user as { _id: string };
+      console.log("delete user product list.....");
+      const result = await this.userService.deleteList(userId, listId);
+      if (result) {
+        res.status(result.status).json({ success: result.success });
+      }
+    } catch (err) {
+      console.error("Error occured in unsend Message in user controller", err);
+    }
+  };
 }

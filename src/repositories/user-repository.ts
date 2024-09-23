@@ -153,6 +153,7 @@ export class UserRepository {
       user.fullname = fullname;
       user.bio = bio;
       user.profilePic = profilePic;
+
       return await user.save();
     } catch (err) {
       console.error(
@@ -829,6 +830,7 @@ export class UserRepository {
 
   async fetchUserWishlist(userId: string) {
     try {
+      console.log('fetch user wishlists by userId',userId);
       const userWishlist = await Wishlist.findOne({ user: userId })
         .populate({
           path: "products",
@@ -853,8 +855,8 @@ export class UserRepository {
   async removeFromWishlist(userId: any, productId: any) {
     try {
       const user = await User.findOne({ _id: userId });
-      console.log('userId for remove product from wishlist',userId);
-      const userWishlist = await Wishlist.findOne({ user:userId });
+      console.log("userId for remove product from wishlist", userId);
+      const userWishlist = await Wishlist.findOne({ user: userId });
 
       if (!userWishlist) {
         throw new Error("Wishlist not found for the user.");
@@ -867,8 +869,14 @@ export class UserRepository {
       userWishlist.products = userWishlist.products.filter(
         (id) => id.toString() !== productId
       );
-
+      const product = await Product.findById(productId);
+      if (!product) {
+        return { message: "Product not found" };
+      }
+      product.isWishlisted = false;
+      await product?.save();
       await userWishlist.save();
+      
 
       return { message: "Product removed from wishlist successfully." };
     } catch (err) {
@@ -888,6 +896,27 @@ export class UserRepository {
         "error occured during in fetching users in admin panel",
         err
       );
+    }
+  }
+
+  async deleteList(userId: any, productId: any) {
+    try {
+      const user = await User.findOne({ _id: userId });
+      console.log("userId for delete product from userlist", userId);
+      const userList = await Product.findByIdAndDelete({ sellerId: userId ,_id:productId});
+
+      if (!userList) {
+        throw new Error("userList not found for the user.");
+      }
+
+    
+      return { message: "Product removed from wishlist successfully." };
+    } catch (err) {
+      console.error(
+        "Error occurred while removing product from wishlist:",
+        err
+      );
+      throw new Error("Error occurred while removing product from wishlist");
     }
   }
 }

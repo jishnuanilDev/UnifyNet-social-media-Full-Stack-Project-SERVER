@@ -61,5 +61,6 @@ userRouter.get("/fetch-replies/:commentId",userController.fetchReplies);
 userRouter.post("/add-to-wishlist",protect,userController.addToWishlist);
 userRouter.get("/fetch-user-wishlist",protect,userController.fetchUserWishlist);
 userRouter.patch("/remove-from-wishlist",protect,userController.removeFromWishlist);
+userRouter.patch("/delete-your-list",protect,userController.deleteList);
 userRouter.put("/edit-product",protect,userController.editProduct); 
 export default userRouter;
